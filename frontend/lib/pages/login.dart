@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../api/auth_api.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatelessWidget {
   LoginPage({super.key});
@@ -16,7 +17,20 @@ class LoginPage extends StatelessWidget {
     if (!context.mounted) return;
 
     if (success) {
-      Navigator.pushReplacementNamed(context, '/dashboard');
+      final prefs = await SharedPreferences.getInstance();
+      final role = prefs.getString('role');
+
+      if (role == 'employee') {
+        Navigator.pushReplacementNamed(context, '/employee');
+      } else if (role == 'owner') {
+        Navigator.pushReplacementNamed(context, '/owner');
+      } else if (role == 'admin') {
+        Navigator.pushReplacementNamed(context, '/admin');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid role')),
+        );
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Invalid credentials')),
