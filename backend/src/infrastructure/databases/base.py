@@ -1,10 +1,4 @@
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import DeclarativeBase
 
-Base = declarative_base()
-
-
-# ORM: object relational mapping base class
-# OOP : object oriented programming
-
-# ERD --> class relational
-# Lập trinhf hướng đối tượng (logic) mapping class -> table (database)
+class Base(DeclarativeBase):
+    pass

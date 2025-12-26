@@ -1,18 +1,6 @@
-from .database import init_db
-from .base import Base
+from infrastructure.databases.engine import engine
+from infrastructure.databases.base import Base
 
-# Import models so SQLAlchemy sees them
-from .. models import (
-    #course_register_model,
-    #todo_model,
-    user_model,
-    #course_model,
-    #consultant_model,
-    #appointment_model,
-    #program_model,
-    #feedback_model,
-    #survey_model,
-)
+from infrastructure.models.user import User
 
-def init_db(app):
-    init_mssql(app)
+Base.metadata.create_all(engine)

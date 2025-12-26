@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from . import base
+from .base import Base
 engine = None
 SessionLocal = None
 
@@ -15,4 +15,4 @@ def init_db(app):
 
     SessionLocal = sessionmaker(bind=engine)
 
-    base.Base.metadata.create_all(engine)
+    Base.metadata.create_all(engine)
