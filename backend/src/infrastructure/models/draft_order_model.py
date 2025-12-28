@@ -17,5 +17,5 @@ class DraftOrderModel(Base):
     notes_from_ai = Column(Text, nullable=True)
     created_at = Column(DateTime)
     processed_at = Column(DateTime)
-    processed_by = Column(Integer, ForeignKey)
+    processed_by = Column(Integer, nullable=False)
     order_id = Column(Integer, ForeignKey('order.order_id'))

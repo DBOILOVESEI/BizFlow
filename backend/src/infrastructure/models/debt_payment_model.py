@@ -11,5 +11,5 @@ class DebtPaymentModel(Base):
     payment_date = Column(DateTime, nullable=True)
     payment_method = Column(Enum('CASH', 'BANK_TRANSFER', 'OTHER'), nullable=False)
     notes = Column(Text, nullable=Text)
-    received_by = Column(Integer, ForeignKey)
+    received_by = Column(Integer, nullable=False)
     created_at = Column(DateTime)

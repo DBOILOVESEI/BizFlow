@@ -9,7 +9,7 @@ class CategoryModel(Base):
     business_id = Column(Integer, ForeignKey('business.business_id'))
     category_name = Column(String(100), nullable=True)
     description = Column(Text, nullable=True)
-    parent_category_id = Column(Integer, ForeignKey)
+    parent_category_id = Column(Integer, nullable=False)
     is_active = Column(Boolean)
     created_at = Column(DateTime)
     updated_at = Column(DateTime)

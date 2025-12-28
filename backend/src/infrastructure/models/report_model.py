@@ -16,5 +16,5 @@ class ReportModel(Base):
     file_path = Column(String(500), nullable=True)
     status = Column(Enum('DRAFT', 'FINALIZED', 'SUBMITTED'), nullable=False)
     generated_at = Column(DateTime)
-    generated_by = Column(Integer, ForeignKey)
+    generated_by = Column(Integer, nullable=False)
     finalized_at = Column(DateTime, nullable=True)

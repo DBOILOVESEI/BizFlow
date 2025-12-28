@@ -6,7 +6,7 @@ class BusinessModel(Base):
     __table_args__ = {'extend_existing': True}
 
     business_id = Column(Integer, primary_key=True)
-    owner_id = Column(Integer, ForeignKey)
+    owner_id = Column(Integer, nullable=False)
     business_name = Column(String(200), nullable=True)
     business_type = Column(String(100), nullable=True)
     tax_code = Column(String(50), nullable=False)

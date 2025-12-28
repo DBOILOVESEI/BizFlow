@@ -12,5 +12,5 @@ class StockTransactionModel(Base):
     reference_type = Column(Enum('PURCHASE_ORDER', 'SALES_ORDER', 'MANUAL'), nullable=False)
     reference_id = Column(Integer, nullable=False)
     notes = Column(Text, nullable=Text)
-    created_by = Column(Integer, ForeignKey)
+    created_by = Column(Integer, nullable=False)
     created_at = Column(DateTime)

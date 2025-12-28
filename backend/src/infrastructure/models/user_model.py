@@ -15,4 +15,4 @@ class UserModel(Base):
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
     last_login = Column(DateTime)
-    created_by = Column(Integer, ForeignKey)
+    created_by = Column(Integer, nullable=False)
