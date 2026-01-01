@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'login.dart';
 import 'signup.dart';
 
-
 class TitlePage extends StatelessWidget {
   const TitlePage({super.key});
 
@@ -48,20 +47,19 @@ class TitlePage extends StatelessWidget {
               ),
 
               // Buttons
-
-              // -- SIGN UP -- //
               Column(
                 children: [
+                  // -- SIGN UP --
                   SizedBox(
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const SignupPage(),
-                        ),
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => SignupPage(),
+                          ),
                         );
                       },
                       style: ElevatedButton.styleFrom(
@@ -69,44 +67,45 @@ class TitlePage extends StatelessWidget {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        elevation: 0
+                        elevation: 0,
                       ),
                       child: const Text(
                         'Create Account',
                         style: TextStyle(
                           color: Colors.black,
                           fontSize: 16,
-                          fontWeight: FontWeight.bold
-                          ),
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
+
                   const SizedBox(height: 12),
 
-                  // -- SIGN IN -- //
+                  // -- SIGN IN --
                   SizedBox(
                     width: double.infinity,
                     height: 50,
                     child: OutlinedButton(
                       onPressed: () {
-                       Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => LoginPage(),
-                        ),
-                      );
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => LoginPage(),
+                          ),
+                        );
                       },
                       style: OutlinedButton.styleFrom(
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)
-                        )
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       child: const Text(
                         'Sign In',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 16
-                          ),
+                          fontSize: 16,
+                        ),
                       ),
                     ),
                   ),
