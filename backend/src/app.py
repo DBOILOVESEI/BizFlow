@@ -1,7 +1,7 @@
 from flask import Flask, jsonify
 from modules.extensions import bcrypt, jwt, cors
-from routes.auth import auth_bp
-from routes.admin import admin_bp
+from routes import auth_bp
+from routes import admin_bp
 
 app = Flask(__name__)
 app.config["JWT_SECRET_KEY"] = "super-secret-key"
