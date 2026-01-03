@@ -15,7 +15,7 @@ class BusinessModel(Base):
     district = Column(String(100), nullable=True)
     ward = Column(String(100), nullable=True)
     phone = Column(String(20), nullable=False)
-    subscription_plan = Column(Enum('BASIC', 'PRO', 'ENTERPRISE'), nullable=False)
+    subscription_plan = Column(Enum('BASIC', 'PRO', 'ENTERPRISE', name="SubscriptionPlanEnum"), nullable=False)
     subscription_start_date = Column(DateTime)
     subscription_end_date = Column(DateTime)
     is_active = Column(Boolean, nullable=True)

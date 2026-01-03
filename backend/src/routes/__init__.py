@@ -1,2 +1,2 @@
-from routes import admin
-from routes import auth
+from .admin import admin_bp
+from .auth import auth_bp
