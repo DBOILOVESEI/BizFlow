@@ -1,3 +1,28 @@
+from flask import Flask, jsonify
+from modules.extensions import bcrypt, jwt, cors
+from routes import auth_bp
+from routes import admin_bp
+
+app = Flask(__name__)
+app.config["JWT_SECRET_KEY"] = "super-secret-key"
+
+bcrypt.init_app(app)
+jwt.init_app(app)
+cors.init_app(app)
+
+# Register blueprints
+app.register_blueprint(auth_bp)
+app.register_blueprint(admin_bp)
+
+@app.route("/", methods=["GET"])
+def health_check():
+    return jsonify(msg="Server is running!")
+
+if __name__ == "__main__":
+    app.run(debug=True, port=5000)
+
+
+"""
 # FLASK SERVICES
 from flask import Flask, jsonify, request
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt
@@ -79,3 +104,4 @@ def health_check():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
+"""
