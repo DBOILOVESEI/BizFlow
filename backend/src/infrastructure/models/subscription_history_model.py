@@ -11,6 +11,11 @@ class SubscriptionHistoryModel(Base):
     start_date = Column(DateTime)
     end_date = Column(DateTime)
     amount_paid = Column(DECIMAL(10,2), nullable=True)
+<<<<<<< HEAD
     payment_method = Column(Enum('BANK_TRANSFER', 'CARD', 'CASH'), nullable=False)
     status = Column(Enum('ACTIVE', 'EXPIRED', 'CANCELLED'), nullable=False)
+=======
+    payment_method = Column(Enum('BANK_TRANSFER', 'CARD', 'CASH', name="PaymentMethodEnum"), nullable=False)
+    status = Column(Enum('ACTIVE', 'EXPIRED', 'CANCELLED', name="SubscriptionMethodEnum"), nullable=False)
+>>>>>>> e0906b4a9d22d5a9239c2fb2c08633218e53faac
     created_at = Column(DateTime)

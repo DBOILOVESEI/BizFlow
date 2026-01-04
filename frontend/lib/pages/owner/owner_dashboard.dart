@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import '../../utils/logout.dart';
 class OwnerDashboard extends StatelessWidget {
   const OwnerDashboard({super.key});
 
@@ -38,22 +38,29 @@ class _OwnerDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Drawer(
       child: ListView(
-        children: const [
-          DrawerHeader(
+        children: [
+          const DrawerHeader(
             decoration: BoxDecoration(color: Colors.green),
-            child: Text('Owner Menu',
-                style: TextStyle(fontSize: 20, color: Colors.white)),
+            child: Text(
+              'Owner Menu',
+              style: TextStyle(fontSize: 20, color: Colors.white),
+            ),
           ),
-          ListTile(leading: Icon(Icons.inventory), title: Text('Products')),
-          ListTile(leading: Icon(Icons.store), title: Text('Inventory')),
-          ListTile(leading: Icon(Icons.people), title: Text('Customers')),
-          ListTile(leading: Icon(Icons.bar_chart), title: Text('Reports')),
-          ListTile(leading: Icon(Icons.logout), title: Text('Logout')),
+          const ListTile(leading: Icon(Icons.inventory), title: Text('Products')),
+          const ListTile(leading: Icon(Icons.store), title: Text('Inventory')),
+          const ListTile(leading: Icon(Icons.people), title: Text('Customers')),
+          const ListTile(leading: Icon(Icons.bar_chart), title: Text('Reports')),
+          ListTile(
+            leading: const Icon(Icons.logout),
+            title: const Text('Logout'),
+            onTap: () => logout(context), // ✅
+          ),
         ],
       ),
     );
   }
 }
+
 
 class _StatCard extends StatelessWidget {
   final String title;

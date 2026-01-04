@@ -9,7 +9,11 @@ class AIInteractionModel(Base):
     business_id = Column(Integer, ForeignKey('business.business_id'))
     draft_order_id = Column(Integer, ForeignKey('draft_order.draft_id'))
     input_text = Column(Text, nullable=True)
+<<<<<<< HEAD
     input_type = Column(Enum('VOICE', 'TEXT'), nullable=True)
+=======
+    input_type = Column(Enum('VOICE', 'TEXT', name="AIInputTypeEnum"), nullable=True)
+>>>>>>> e0906b4a9d22d5a9239c2fb2c08633218e53faac
     parsed_output = Column(JSON, nullable=True)
     confidence_score = Column(DECIMAL(3,2), nullable=True)
     was_correct = Column(Boolean, nullable=True)

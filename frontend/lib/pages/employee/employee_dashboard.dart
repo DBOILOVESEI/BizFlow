@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import '../../utils/logout.dart';
 class EmployeeDashboard extends StatelessWidget {
   const EmployeeDashboard({super.key});
 
@@ -46,15 +46,27 @@ class _EmployeeDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Drawer(
       child: ListView(
-        children: const [
-          DrawerHeader(
-            child: Text('Employee Menu',
-                style: TextStyle(fontSize: 20, color: Colors.white)),
+        children: [
+          const DrawerHeader(
             decoration: BoxDecoration(color: Colors.indigo),
+            child: Text(
+              'Employee Menu',
+              style: TextStyle(fontSize: 20, color: Colors.white),
+            ),
           ),
-          ListTile(leading: Icon(Icons.add), title: Text('Create Order')),
-          ListTile(leading: Icon(Icons.list), title: Text('Orders')),
-          ListTile(leading: Icon(Icons.logout), title: Text('Logout')),
+          const ListTile(
+            leading: Icon(Icons.add),
+            title: Text('Create Order'),
+          ),
+          const ListTile(
+            leading: Icon(Icons.list),
+            title: Text('Orders'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.logout),
+            title: const Text('Logout'),
+            onTap: () => logout(context), // ✅
+          ),
         ],
       ),
     );

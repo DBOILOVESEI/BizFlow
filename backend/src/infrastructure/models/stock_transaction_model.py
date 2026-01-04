@@ -7,9 +7,9 @@ class StockTransactionModel(Base):
 
     transaction_id = Column(Integer, primary_key=True)
     business_id = Column(Integer, ForeignKey('business.business_id'))
-    transaction_type = Column(Enum('IMPORT', 'EXPORT', 'ADJUSTMENT'), nullable=False)
+    transaction_type = Column(Enum('IMPORT', 'EXPORT', 'ADJUSTMENT', name="StockTransactionTypeEnum"), nullable=False)
     transaction_date = Column(DateTime)
-    reference_type = Column(Enum('PURCHASE_ORDER', 'SALES_ORDER', 'MANUAL'), nullable=False)
+    reference_type = Column(Enum('PURCHASE_ORDER', 'SALES_ORDER', 'MANUAL', name="ReferenceTypeEnum"), nullable=False)
     reference_id = Column(Integer, nullable=False)
     notes = Column(Text, nullable=Text)
     created_by = Column(Integer, nullable=False)

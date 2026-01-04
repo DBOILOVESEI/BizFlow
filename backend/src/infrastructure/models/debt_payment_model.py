@@ -9,7 +9,7 @@ class DebtPaymentModel(Base):
     debt_id = Column(Integer, ForeignKey('customer_debt.debt_id'))
     payment_amount = Column(DECIMAL(15,2), nullable=False)
     payment_date = Column(DateTime, nullable=True)
-    payment_method = Column(Enum('CASH', 'BANK_TRANSFER', 'OTHER'), nullable=False)
+    payment_method = Column(Enum('CASH', 'BANK_TRANSFER', 'OTHER', name="PaymenMethodEnum"), nullable=False)
     notes = Column(Text, nullable=Text)
     received_by = Column(Integer, nullable=False)
     created_at = Column(DateTime)
