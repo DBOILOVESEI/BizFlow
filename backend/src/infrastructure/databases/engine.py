@@ -11,4 +11,5 @@ engine = create_engine(
     future=True
 )
 
-SessionLocal = sessionmaker(bind=engine)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+session = SessionLocal()
