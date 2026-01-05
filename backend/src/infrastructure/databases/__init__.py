@@ -1,6 +1,7 @@
 from infrastructure.databases.engine import engine
 from infrastructure.databases.base import Base
+from infrastructure import models # init models
 
-from infrastructure.models.user import User
+#from infrastructure.models.user import User
 
 Base.metadata.create_all(engine)
