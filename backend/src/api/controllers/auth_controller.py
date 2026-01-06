@@ -1,25 +1,73 @@
 import jwt
 from flask import Blueprint, request, jsonify, current_app
-from modules.extensions import bcrypt, jwt, cors
+from modules.extensions import bcrypt, cors
 from datetime import datetime, timedelta
 from infrastructure.models.user_model import UserModel
 from infrastructure.databases.engine import session
+
+from repositories import user_repo
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/')
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
-    users = session.query(UserModel).filter_by(
-        username=data['username'],
-        password=data['password'],
-        #role=data['role']
-    ).first()
-    if not users:
-        return jsonify({'msg': 'Invalid credentials'}), 401
+    email = data.get("username") 
+    password = data.get("password")
 
+    users = user_repo.user_exists(email)    
+    if not users:
+        return jsonify({'msg': 'Thông tin xác thực không hợp lệ.'}), 401
+
+    # SẼ THAY ĐỔI SAU KHI CHỨC NĂNG ĐĂNG KÝ HOẠT ĐỘNG   
+    # NHỚ PHẢI PASS ROLE VỀ 
+    """
+    try:
+        
+        if not bcrypt.check_password_hash(users.password_hash, password):
+            # wrong pass
+            return jsonify({'msg': 'Thông tin xác thực không hợp lệ. (Email hoặc Password không đúng.)'}), 401
+        
+    except ValueError:
+        # hash error
+        return jsonify({'msg': 'Server configuration error in password handling'}), 500
+    """
+    if users.password_hash != password:
+        return jsonify({'msg': 'Thông tin xác thực không hợp lệ. (Email hoặc Password không đúng.)'}), 401
+    print("gay nigger1")
+    payload =  {
+        'sub': str(users.user_id),
+        #'role': users.role,
+        'iat': datetime.utcnow(),
+        'exp': datetime.utcnow() + timedelta(hours=2)
+    }
+
+    token = jwt.encode(
+        payload,
+        current_app.config['SECRET_KEY'],
+        algorithm='HS256'
+    )
+    
+    # Đảm bảo token luôn là string trước khi gửi đi
+    if isinstance(token, bytes):
+        token = token.decode('utf-8')
+    
+    # 4. Trả về token và thông tin user cần thiết
+    print("gay nigger")
+    return jsonify({
+        "access_token": token,
+        "token_type": "Bearer",
+        # Có thể trả về thêm thông tin user cơ bản:
+        "user": {
+            "id": str(users.user_id),
+            "name": users.username,
+            "email": users.email,
+            #"role": users.role,
+        }
+    }), 200
+    """
     payload =  {'sub': str(users.user_id),
-                'role': users.role,
+                #'role': users.role or "Employee",
                 'iat': datetime.utcnow(),
                 'exp': datetime.utcnow() + timedelta(hours=2)}
 
@@ -31,6 +79,12 @@ def login():
     if isinstance(token, bytes):
         token = token.decode('utf-8')
         return jsonify({'access_token': token,'token_type': 'Bearer'})
+
+    return jsonify({
+        "access_token": token,
+        "token_type": "Bearer",
+    }), 200
+    """
 
 @auth_bp.route("/signup", methods=['POST'])
 def signup():
@@ -60,8 +114,7 @@ def signup():
         is_active=True,
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
-        created_by=0 ,
-        role="employee"
+        created_by=0
     )
 
     try:

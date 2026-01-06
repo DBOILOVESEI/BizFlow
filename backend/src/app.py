@@ -8,7 +8,7 @@ from api.controllers.auth_controller import auth_bp
 #from routes import admin_bp
 
 app = Flask(__name__)
-app.config["JWT_SECRET_KEY"] = "super-secret-key"
+app.config["SECRET_KEY"] = "super-secret-key"
 
 bcrypt.init_app(app)
 jwt.init_app(app)

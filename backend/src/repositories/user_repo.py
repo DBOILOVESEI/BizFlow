@@ -1,13 +1,19 @@
 # repositories/user_repo.py
-from infrastructure.databases.session import db_session
-from infrastructure.databases.models.user import UserModel
+from infrastructure.databases.engine import session
+from infrastructure.models.user_model import UserModel
 
 def get_by_username(username):
-    return db_session.query(UserModel).filter_by(username=username).first()
+    return session.query(UserModel).filter_by(username=username).first()
 
 def get_by_email(email):
-    return db_session.query(UserModel).filter_by(email=email).first()
+    return session.query(UserModel).filter_by(email=email).first()
 
+def user_exists(email):
+    return session.query(UserModel).filter_by(
+        email=email,
+        #role=data['role']
+    ).first() 
+    
 def create_user(username, email, password_hash, role="employee"):
     user = UserModel(
         username=username,
@@ -15,6 +21,6 @@ def create_user(username, email, password_hash, role="employee"):
         password_hash=password_hash,
         role=role
     )
-    db_session.add(user)
-    db_session.commit()
+    session.add(user)
+    session.commit()
     return user
