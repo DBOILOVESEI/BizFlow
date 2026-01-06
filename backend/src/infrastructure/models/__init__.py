@@ -1,3 +1,4 @@
+from .role_model import RoleModel
 from .accounting_entry_model import AccountingEntryModel
 from .ai_interaction_model import AIInteractionModel
 from .audit_log_model import AuditLogModel

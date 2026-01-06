@@ -1,9 +1,54 @@
+// MODULES
+
+// Base modules
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/modules/navigate.dart';
+
+// Essential modules
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+// Helper modules
+import '../../modules/error.dart';
 import 'owner_management_page.dart';
 import 'subscription_page.dart';
 import 'platform_analytics_page.dart';
 import 'system_config_page.dart';
 import '../../utils/logout.dart';
+
+// CONFIG
+String tokenInvalidErr = "Session invalid. Please login again.";
+
+// MAIN
+Future<bool> adminTokenValid() async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('token');
+  final role = prefs.getString('role');
+
+  if (token == null) return false;
+  final response = await http.post(
+      Uri.parse('http://127.0.0.1:5000/admin'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(
+        {
+          "action": "do_something",
+          "role": role
+        }
+      ),
+    );
+
+  if (response.statusCode == 200) {
+    return true;
+  }
+
+  return false;
+}
+
+
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({super.key});
 
@@ -22,7 +67,15 @@ class AdminDashboard extends StatelessWidget {
             _AdminTile(
               icon: Icons.business,
               title: 'Manage Owner Accounts',
-              onTap: () {
+              onTap: () async {
+                final bool valid = await adminTokenValid();
+                if (!context.mounted) return;
+                
+                if (!valid) {
+                  showError(context, tokenInvalidErr);
+                  navigateToLogin(context);
+                }
+
                 Navigator.push(
                   context,
                   MaterialPageRoute(

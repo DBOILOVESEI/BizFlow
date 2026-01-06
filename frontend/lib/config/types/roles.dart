@@ -2,6 +2,7 @@ enum Role {
   employee,
   owner,
   admin,
+  unknown,
 }
 
 Role? getRole(String? roleString) {

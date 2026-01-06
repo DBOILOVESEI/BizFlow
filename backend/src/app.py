@@ -1,8 +1,11 @@
 from flask import Flask, jsonify
 from modules.extensions import bcrypt, jwt, cors
 from infrastructure import databases
-from routes import auth_bp
-from routes import admin_bp
+
+# BLUEPRINTS
+from api.controllers.auth_controller import auth_bp
+#from routes import auth_bp
+#from routes import admin_bp
 
 app = Flask(__name__)
 app.config["JWT_SECRET_KEY"] = "super-secret-key"
@@ -13,7 +16,6 @@ cors.init_app(app)
 
 # Register blueprints
 app.register_blueprint(auth_bp)
-app.register_blueprint(admin_bp)
 
 @app.route("/", methods=["GET"])
 def health_check():

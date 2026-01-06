@@ -10,27 +10,51 @@ import '../api/auth_api.dart';
 
 // Helper modules
 import "../../modules/error.dart";
-import "../../modules/types/roles.dart";
+import "../config/types/roles.dart";
+import '../config/types/auth_status.dart';
 
 // VARS
-const String noEmailOrPass = "Invalid email or password.";
-const String invalidLoginInfo = "Invalid credentials";
-const String noValidRole = "Role not found.";
+String noEmailOrPassErr = getErrorStringMessage(Error.noEmailOrPass);
+String invalidRollErr = getErrorStringMessage(Error.invalidRole);
 
 // FUNCTIONS
-Future<bool> canLogin(BuildContext context, String emailOrUser, String password) async {
-  if (emailOrUser.isEmpty || password.isEmpty) {
-    showError(context, noEmailOrPass);
+Future<bool> canLogin(BuildContext context, String email, String password) async {
+  if (email.isEmpty || password.isEmpty) {
+    showError(context, noEmailOrPassErr);
     return false;
   }
 
   // Send signal to server
-  final bool success = await AuthApi.login(emailOrUser, password);
+  final AuthStatus status = await AuthApi.login(email, password);
   if (!context.mounted) return false;
-  if (!success) showError(context, invalidLoginInfo);
 
+  final authError = authErrorFromCode(status.errorCode);
+
+  if (authError != Error.success) {
+    final msg = getErrorStringMessage(authError);
+    showError(context, msg);
+    return false;
+  }
   return true;
 }
+
+Future<void> _login(BuildContext context, String email, String password) async {
+    final loginValid = await canLogin(context, email, password);
+
+    if (loginValid) {
+      final prefs = await SharedPreferences.getInstance();
+      if (!context.mounted) return;
+      
+      final roleString = prefs.getString("role");
+      final role = getRole(roleString);
+      if (role == null) {
+        showError(context, invalidRoleErr);
+        return;
+      }
+
+      navigateByRole(context, role);
+    }
+  }
 
 // MAIN
 class LoginPage extends StatelessWidget {
@@ -39,24 +63,6 @@ class LoginPage extends StatelessWidget {
 
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();  
-
-  Future<void> _login(BuildContext context) async {
-    final String emailOrUser = emailController.text.trim();
-    final String password = passwordController.text;
-    final loginValid = await canLogin(context, emailOrUser, password);
-
-    if (loginValid) {
-      final prefs = await SharedPreferences.getInstance();
-      final roleString = prefs.getString("role");
-      final role = getRole(roleString);
-      if (role == null) {
-        showError(context, noValidRole);
-        return;
-      }
-
-      navigateByRole(context, role);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -93,7 +99,11 @@ class LoginPage extends StatelessWidget {
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: () => _login(context),
+                onPressed: () => _login(
+                  context,
+                  emailController.text.trim(),
+                  passwordController.text,
+                ),
                 child: const Text('Sign In'),
               ),
             ),
