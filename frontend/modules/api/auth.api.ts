@@ -1,15 +1,14 @@
 // modules/api/auth.api.ts
 import { User } from '../../types' // Đảm bảo đường dẫn đúng
 
-const API_BASE_URL = '/api' // Sử dụng đường dẫn tương đối, Next.js sẽ proxy/route
-
+import {API_BASE_URL, ENDPOINTS} from "./api.config"
 /**
  * Lấy thông tin người dùng hiện tại từ server bằng cách sử dụng Access Token
  * @param token Access Token đã lưu
  * @returns Promise<User>
  */
 export async function fetchUserProfile(token: string): Promise<User> {
-  const response = await fetch(`${API_BASE_URL}/users/me`, { // Giả định endpoint này
+  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.AUTH}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import { API_BASE_URL, ENDPOINTS } from '../../config/api.config';
+import { API_BASE_URL, ENDPOINTS } from '../../modules/api/api.config';
 
 // Helper
 import { User, UserRole } from '../../types';

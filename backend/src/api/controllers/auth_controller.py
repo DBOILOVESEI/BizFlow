@@ -1,6 +1,9 @@
 import jwt
 from flask import Blueprint, request, jsonify, current_app
+from flask_jwt_extended import create_access_token, get_jwt_identity, get_jwt
+
 from modules.extensions import bcrypt, cors
+from modules.decorators import role_required
 from datetime import datetime, timedelta
 from infrastructure.databases.engine import session
 
@@ -40,21 +43,27 @@ def login():
         'exp': datetime.utcnow() + timedelta(hours=2)
     }
 
-    
-
+    access_token = create_access_token(
+        identity=str(users.user_id),
+        additional_claims={
+        "role": role
+        }
+    )
+    """
     token = jwt.encode(
         payload,
         current_app.config['SECRET_KEY'],
         algorithm='HS256'
     )
+    """
     
     # Đảm bảo token luôn là string trước khi gửi đi
-    if isinstance(token, bytes):
-        token = token.decode('utf-8')
+    if isinstance(access_token, bytes):
+        access_token = access_token.decode('utf-8')
     
     # 4. Trả về token và thông tin user cần thiết
     return jsonify({
-        "access_token": token,
+        "access_token": access_token,
         "token_type": "Bearer",
         "user": {
             "id": str(users.user_id),
@@ -63,26 +72,6 @@ def login():
             "role": role   # 👈 QUAN TRỌNG
         }
     }), 200
-    """
-    payload =  {'sub': str(users.user_id),
-                #'role': users.role or "Employee",
-                'iat': datetime.utcnow(),
-                'exp': datetime.utcnow() + timedelta(hours=2)}
-
-    token = jwt.encode(
-        payload,
-        current_app.config['SECRET_KEY'],
-        algorithm='HS256'
-    )
-    if isinstance(token, bytes):
-        token = token.decode('utf-8')
-        return jsonify({'access_token': token,'token_type': 'Bearer'})
-
-    return jsonify({
-        "access_token": token,
-        "token_type": "Bearer",
-    }), 200
-    """
 
 @auth_bp.route("/signup", methods=['POST'])
 def signup():
@@ -134,3 +123,21 @@ def signup():
         return jsonify({"msg": "Database error"}), 500
 
     return jsonify({"msg": "Signup successful"}), 201
+
+@auth_bp.route("/auth", methods=['GET'])
+@role_required("OWNER", "EMPLOYEE")
+def get_user_profile():
+    user_id = get_jwt_identity()
+    claims = get_jwt()
+    role = claims.get("role")
+
+    user = user_repo.get_by_id(user_id)
+    if not user:
+        return jsonify({"msg": "User not found"}), 404
+
+    return jsonify({
+        "user_id": str(user.user_id),
+        "username": user.username,
+        "email": user.email,
+        "role_name": role
+    }), 200

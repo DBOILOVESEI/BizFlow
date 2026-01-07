@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { User, UserRole } from '../../types';
 import { Zap, User as UserIcon, ShieldCheck, ShoppingCart, ArrowRight, Mail, Lock, Building, Hash, ArrowLeft, CheckCircle2 } from 'lucide-react';
 
-import { API_BASE_URL, ENDPOINTS } from '../../config/api.config';
+import { API_BASE_URL, ENDPOINTS } from '../../modules/api/api.config';
 
 // MAIN
 export default function Signup() {
