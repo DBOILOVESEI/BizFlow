@@ -22,12 +22,7 @@ import {
 } from 'lucide-react';
 import { MOCK_USERS } from "../constants";
 
-interface LoginProps {
-  onLogin: (user: User) => void;
-  onToggle: () => void;
-}
-
-const Login: React.FC<LoginProps> = ({ onLogin, onToggle }) => {
+export default function Login() {
   const router = useRouter();
 
   const [view, setView] = useState<'login' | 'forgot-password'>('login');
@@ -36,7 +31,11 @@ const Login: React.FC<LoginProps> = ({ onLogin, onToggle }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isForgotSubmitted, setIsForgotSubmitted] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => { // Thêm 'async'
+  function goToSignup(): void {
+    router.push('/signup');
+  }
+  
+  const login = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
@@ -50,24 +49,24 @@ const Login: React.FC<LoginProps> = ({ onLogin, onToggle }) => {
       // Gửi Yêu cầu Đăng nhập đến backend
       const response = await fetch(`${API_BASE_URL}${ENDPOINTS.LOGIN}`, {
           method: 'POST',
-          headers: {
-              'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(loginData),
       });
       
       const data = await response.json();
-      console.log(data);
       if (response.ok) {
-        // Đăng nhập thành công (Status 200)
-        // Lưu token (quan trọng!)
         localStorage.setItem('accessToken', data.access_token);
-        
+
         // Gọi hàm onLogin với thông tin người dùng từ response (nếu server trả về)
         // Nếu server không trả về object user, bạn cần fetch thêm hoặc parse token.
         // Dựa trên code backend sửa, server trả về user:
-        const loggedInUser: User = data.user; 
-        onLogin(loggedInUser); 
+        const loggedInUser: User = data.user
+
+        // optional redirect by role
+        if (loggedInUser.role === 'OWNER') {
+          router.push('/dashboard')
+        }
+
         
       } else {
         // Đăng nhập thất bại (Status 401, 400, v.v...)
@@ -92,11 +91,6 @@ const Login: React.FC<LoginProps> = ({ onLogin, onToggle }) => {
     }, 1500);
   };
 
-  const handleQuickLogin = (role: UserRole) => {
-    const found = MOCK_USERS.find(u => u.role === role);
-    if (found) onLogin(found);
-  };
-
   return (
     <div className="min-h-screen mesh-gradient flex items-center justify-center p-6 relative overflow-hidden">
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-600/20 rounded-full blur-[120px]" />
@@ -105,7 +99,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onToggle }) => {
       <div className="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-2 bg-white/5 backdrop-blur-xl rounded-[2.5rem] border border-white/10 shadow-2xl overflow-hidden relative z-10">
         
         {/* Cột bên trái: Branding & Intro */}
-        <div className="p-12 lg:p-16 flex flex-col justify-between bg-gradient-to-br from-indigo-600/20 to-transparent border-r border-white/10">
+        <div className="p-12 lg:p-16 flex flex-col justify-between bg-linear-to-br from-indigo-600/20 to-transparent border-r border-white/10">
           <div>
             <div className="flex items-center gap-3 mb-12">
               <div className="bg-indigo-500 p-2.5 rounded-xl shadow-lg shadow-indigo-500/30">
@@ -126,19 +120,19 @@ const Login: React.FC<LoginProps> = ({ onLogin, onToggle }) => {
             <p className="text-slate-500 text-sm mb-6 uppercase tracking-widest font-bold">Truy cập nhanh (Demo)</p>
             <div className="flex flex-wrap gap-3">
               <button 
-                onClick={() => handleQuickLogin(UserRole.OWNER)} 
+                //onClick={() => handleQuickLogin(UserRole.OWNER)} 
                 className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-slate-300 transition-colors flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider"
               >
                  <UserIcon size={14} className="text-indigo-400" /> Chủ tiệm
               </button>
               <button 
-                onClick={() => handleQuickLogin(UserRole.EMPLOYEE)} 
+                //onClick={() => handleQuickLogin(UserRole.EMPLOYEE)} 
                 className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-slate-300 transition-colors flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider"
               >
                  <ShoppingCart size={14} className="text-blue-400" /> Nhân viên
               </button>
               <button 
-                onClick={() => handleQuickLogin(UserRole.ADMIN)} 
+                //onClick={() => handleQuickLogin(UserRole.ADMIN)} 
                 className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-slate-300 transition-colors flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider"
               >
                  <ShieldCheck size={14} className="text-amber-400" /> Admin
@@ -157,7 +151,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onToggle }) => {
                 <p className="text-slate-500">Chào mừng trở lại! Vui lòng điền thông tin.</p>
               </div>
               
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={login} className="space-y-5">
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700">Tên đăng nhập / Email</label>
                   <div className="relative">
@@ -215,9 +209,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onToggle }) => {
                   Chưa có tài khoản? {' '}
                   {/* PHẦN CODE ĐÃ ĐƯỢC SỬA TẠI ĐÂY */}
                   <button 
-                    onClick={() => {
-                      router.push('/signup'); // Sửa: Chỉ gọi router.push()
-                    }} 
+                    onClick={goToSignup} 
                     className="text-indigo-600 font-bold hover:underline">
                     Đăng ký ngay
                   </button>
@@ -300,5 +292,3 @@ const Login: React.FC<LoginProps> = ({ onLogin, onToggle }) => {
     </div>
   );
 };
-
-export default Login;

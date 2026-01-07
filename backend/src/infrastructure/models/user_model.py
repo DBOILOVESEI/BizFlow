@@ -18,4 +18,4 @@ class UserModel(Base):
     created_by = Column(Integer, nullable=False)
 
     role_id = Column(Integer, ForeignKey('role.role_id'))
-    owner_id = Column(Integer, ForeignKey('user.user_id'))
+    owner_id = Column(Integer, ForeignKey('user.user_id'), nullable=True)

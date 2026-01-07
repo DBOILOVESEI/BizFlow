@@ -1,15 +1,18 @@
 "use client";
 
+// MODULES
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+
 import { User, UserRole } from '../../types';
 import { Zap, User as UserIcon, ShieldCheck, ShoppingCart, ArrowRight, Mail, Lock, Building, Hash, ArrowLeft, CheckCircle2 } from 'lucide-react';
 
-interface SignUpProps {
-  onSignUp: (user: User) => void;
-  onToggle: () => void;
-}
+import { API_BASE_URL, ENDPOINTS } from '../../config/api.config';
 
-const SignUp: React.FC<SignUpProps> = ({ onSignUp, onToggle }) => {
+// MAIN
+export default function Signup() {
+  const router = useRouter();
+
   const [step, setStep] = useState<1 | 2>(1);
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   
@@ -22,23 +25,65 @@ const SignUp: React.FC<SignUpProps> = ({ onSignUp, onToggle }) => {
   });
   const [isLoading, setIsLoading] = useState(false);
 
+  function goToLogin(): void {
+    router.push('/login');    
+  }
+
   const handleRoleSelect = (role: UserRole) => {
     setSelectedRole(role);
     setStep(2);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+
+  // *** THUẬT TOÁN ĐĂNG KÝ MỚI ***
+  const signup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedRole) return;
+
     setIsLoading(true);
-    setTimeout(() => {
-      onSignUp({
-        id: `u-${Date.now()}`,
-        name: formData.name,
-        email: selectedRole === UserRole.OWNER ? formData.email : `${formData.name.toLowerCase().replace(/\s/g, '')}@store.local`,
-        role: selectedRole || UserRole.EMPLOYEE
+    
+    // 1. Chuẩn bị dữ liệu gửi đi
+    const signupData = {
+      username: formData.name,
+      password: formData.password,
+      role: selectedRole,
+      // Email chỉ bắt buộc cho Chủ cửa hàng (OWNER)
+      email: selectedRole === UserRole.OWNER ? formData.email : undefined,
+      // Tên doanh nghiệp chỉ cho Chủ cửa hàng
+      businessName: selectedRole === UserRole.OWNER ? formData.businessName : undefined,
+      // Mã mời chỉ cho Nhân viên (EMPLOYEE)
+      inviteCode: selectedRole === UserRole.EMPLOYEE ? formData.inviteCode : undefined,
+    };
+
+    try {
+      // POST đến server
+      const response = await fetch(`${API_BASE_URL}${ENDPOINTS.SIGNUP}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(signupData),
       });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // 3. Đăng ký thành công (Status 201 Created hoặc 200 OK)
+        alert("Đăng ký thành công! Vui lòng đăng nhập.");
+        // Chuyển hướng về trang đăng nhập
+        router.push('/login'); 
+      } else {
+        // 4. Đăng ký thất bại (Lỗi 4xx)
+        console.error("Lỗi đăng ký:", data);
+        alert(data.msg || "Đăng ký thất bại. Vui lòng kiểm tra lại thông tin và thử lại.");
+      }
+    } catch (error) {
+      // 5. Lỗi kết nối
+      console.error("Lỗi kết nối server:", error);
+      alert("Không thể kết nối đến máy chủ. Vui lòng thử lại sau.");
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -55,7 +100,7 @@ const SignUp: React.FC<SignUpProps> = ({ onSignUp, onToggle }) => {
             </div>
             <span className="text-xl font-bold text-white tracking-tight">BizFlow</span>
           </div>
-          <button onClick={onToggle} className="text-slate-400 hover:text-white transition-colors text-sm font-medium">
+          <button onClick={goToLogin} className="text-slate-400 hover:text-white transition-colors text-sm font-medium">
             Đã có tài khoản? <span className="text-indigo-400 ml-1">Đăng nhập</span>
           </button>
         </div>
@@ -70,7 +115,7 @@ const SignUp: React.FC<SignUpProps> = ({ onSignUp, onToggle }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <button 
                   onClick={() => handleRoleSelect(UserRole.OWNER)}
-                  className="group p-8 rounded-[2rem] border-2 border-slate-100 hover:border-indigo-600 hover:bg-indigo-50 transition-all duration-300 text-left relative overflow-hidden"
+                  className="group p-8 rounded-4xl border-2 border-slate-100 hover:border-indigo-600 hover:bg-indigo-50 transition-all duration-300 text-left relative overflow-hidden"
                 >
                   <div className="w-16 h-16 rounded-2xl bg-indigo-100 flex items-center justify-center text-indigo-600 mb-6 group-hover:scale-110 transition-transform">
                     <Building size={32} />
@@ -82,7 +127,7 @@ const SignUp: React.FC<SignUpProps> = ({ onSignUp, onToggle }) => {
 
                 <button 
                   onClick={() => handleRoleSelect(UserRole.EMPLOYEE)}
-                  className="group p-8 rounded-[2rem] border-2 border-slate-100 hover:border-blue-600 hover:bg-blue-50 transition-all duration-300 text-left relative overflow-hidden"
+                  className="group p-8 rounded-4xl border-2 border-slate-100 hover:border-blue-600 hover:bg-blue-50 transition-all duration-300 text-left relative overflow-hidden"
                 >
                   <div className="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-600 mb-6 group-hover:scale-110 transition-transform">
                     <ShoppingCart size={32} />
@@ -110,7 +155,7 @@ const SignUp: React.FC<SignUpProps> = ({ onSignUp, onToggle }) => {
                 <p className="text-slate-500">Điền thông tin của bạn để tạo tài khoản.</p>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={signup} className="space-y-4">
                 <div className="grid grid-cols-1 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -214,5 +259,3 @@ const SignUp: React.FC<SignUpProps> = ({ onSignUp, onToggle }) => {
     </div>
   );
 };
-
-export default SignUp;

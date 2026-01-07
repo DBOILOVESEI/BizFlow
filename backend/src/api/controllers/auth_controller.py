@@ -2,10 +2,10 @@ import jwt
 from flask import Blueprint, request, jsonify, current_app
 from modules.extensions import bcrypt, cors
 from datetime import datetime, timedelta
-from infrastructure.models.user_model import UserModel
 from infrastructure.databases.engine import session
 
 from repositories import user_repo
+from repositories import role_repo
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/')
 
@@ -18,12 +18,13 @@ def login():
     users = user_repo.user_exists(email)    
     if not users:
         return jsonify({'msg': 'Thông tin xác thực không hợp lệ.'}), 401
+    role_id = users.role_id
+    role = role_repo.get_role_name_by_id(role_id)
 
     # SẼ THAY ĐỔI SAU KHI CHỨC NĂNG ĐĂNG KÝ HOẠT ĐỘNG   
     # NHỚ PHẢI PASS ROLE VỀ 
-    """
-    try:
-        
+    
+    try: 
         if not bcrypt.check_password_hash(users.password_hash, password):
             # wrong pass
             return jsonify({'msg': 'Thông tin xác thực không hợp lệ. (Email hoặc Password không đúng.)'}), 401
@@ -31,16 +32,15 @@ def login():
     except ValueError:
         # hash error
         return jsonify({'msg': 'Server configuration error in password handling'}), 500
-    """
-    if users.password_hash != password:
-        return jsonify({'msg': 'Thông tin xác thực không hợp lệ. (Email hoặc Password không đúng.)'}), 401
-    print("gay nigger1")
-    payload =  {
+
+    payload = {
         'sub': str(users.user_id),
-        #'role': users.role,
+        'role': role,   # 👈 role name
         'iat': datetime.utcnow(),
         'exp': datetime.utcnow() + timedelta(hours=2)
     }
+
+    
 
     token = jwt.encode(
         payload,
@@ -53,16 +53,14 @@ def login():
         token = token.decode('utf-8')
     
     # 4. Trả về token và thông tin user cần thiết
-    print("gay nigger")
     return jsonify({
         "access_token": token,
         "token_type": "Bearer",
-        # Có thể trả về thêm thông tin user cơ bản:
         "user": {
             "id": str(users.user_id),
             "name": users.username,
             "email": users.email,
-            #"role": users.role,
+            "role": role   # 👈 QUAN TRỌNG
         }
     }), 200
     """
@@ -90,38 +88,49 @@ def login():
 def signup():
     data = request.get_json()
 
-    required_fields = ["username", "password", "email"]
+    required_fields = ["username", "password", "role"] # email required if user = owner
     if not data or not all(field in data for field in required_fields):
         return jsonify({"msg": "Invalid input"}), 400
 
     username = data["username"].strip()
     password = data["password"]
-    email = data["email"].strip().lower()
+    role = data["role"].strip().upper()
+    
+    email = None
+    inviteCode = None
+    owner_id = None
+    existingOwner = None
+    if role == "OWNER":
+        if "email" not in data or not data["email"]:
+            return jsonify({"msg": "Email is required for owner"}), 400
+        email = data["email"].strip().lower()
+    elif role == "EMPLOYEE":
+        if "inviteCode" not in data or not data["inviteCode"]:
+            return jsonify({"msg": "Invite code is required for employee"}), 400
+        inviteCode = data["inviteCode"].strip()
+        owner_id = int(inviteCode)
 
-    existing_user = session.query(UserModel).filter(
-        (UserModel.email == email)
-    ).first()
-
+        existingOwner = user_repo.get_by_id(owner_id)
+        if not existingOwner:
+            return jsonify({"msg": "Owner doesn't exist. Please check your invite code again"}), 404
+        
+    existing_user = user_repo.user_exists(
+        username=username,
+        email=email if role == "OWNER" else None # send email if user = owner
+    )
     if existing_user:
         return jsonify({"msg": "User already exists"}), 409
 
-    password_hash = bcrypt.generate_password_hash(password)
+    role_id = role_repo.get_role_id_by_name(role)
+    if not role_id:
+        return jsonify({"msg": "Role doesn't exist"}), 400
 
-    new_user = UserModel(
-        username=username,
-        password_hash=password_hash,
-        email=email,
-        is_active=True,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
-        created_by=0
-    )
 
-    try:
-        session.add(new_user)
-        session.commit()
-    except IntegrityError:
-        session.rollback()
+    password_hash = bcrypt.generate_password_hash(password).decode("utf-8")
+    owner_id = owner_id if role == "EMPLOYEE" else None
+
+    user_created = user_repo.create_user(username, password_hash, email, role_id, owner_id)
+    if not user_created:
         return jsonify({"msg": "Database error"}), 500
 
-    return jsonify({"msg": "Signup successful"}), 200
+    return jsonify({"msg": "Signup successful"}), 201

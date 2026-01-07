@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 # repositories/user_repo.py
 from infrastructure.databases.engine import session
 from infrastructure.models.user_model import UserModel
@@ -8,19 +10,36 @@ def get_by_username(username):
 def get_by_email(email):
     return session.query(UserModel).filter_by(email=email).first()
 
-def user_exists(email):
-    return session.query(UserModel).filter_by(
-        email=email,
-        #role=data['role']
-    ).first() 
+def get_by_id(user_id):
+    return session.query(UserModel).filter_by(user_id=user_id).first()
+
+def user_exists(username: str, email: str | None = None):
+    # username exists?
+    user = session.query(UserModel).filter_by(username=username).first()
+    if user:
+        return user
+
+    if email!=None:
+        # username not taken. email exists?
+        return session.query(UserModel).filter_by(email=email).first()
     
-def create_user(username, email, password_hash, role="employee"):
-    user = UserModel(
+def create_user(username, password_hash, email, role_id, owner_id):
+    new_user = UserModel(
         username=username,
-        email=email,
         password_hash=password_hash,
-        role=role
+        email=email,
+        role_id=role_id,
+        is_active=True,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
+        created_by=0,
+        owner_id = owner_id
     )
-    session.add(user)
-    session.commit()
-    return user
+    try:
+        session.add(new_user)
+        session.commit()
+        return new_user
+
+    except InterruptedError:
+        session.rollback()
+        return None
