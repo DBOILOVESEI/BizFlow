@@ -297,7 +297,7 @@ export default function POS() {
   */
 
   return (
-    <MainLayout title="Tổng quan"> 
+    <MainLayout title="Bán hàng/POS"> 
     <div className="h-full flex flex-col gap-6 relative">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
         
@@ -405,7 +405,7 @@ export default function POS() {
                     }}
                     onFocus={() => setShowCustomerDropdown(true)}
                     placeholder="Tìm tên hoặc số điện thoại..."
-                    className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="text-slate-800 w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                   {showCustomerDropdown && filteredCustomers.length > 0 && (
                     <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl z-50 max-h-48 overflow-y-auto">
@@ -491,7 +491,7 @@ export default function POS() {
                       <div className="flex items-center bg-white rounded-lg border border-slate-200 p-1">
                         <button 
                           onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                          className="p-1 text-slate-400 hover:text-indigo-600 transition-colors"
+                          className="p-1 text-slate-800 hover:text-indigo-600 transition-colors"
                         >
                           <Minus size={14} />
                         </button>
@@ -499,11 +499,11 @@ export default function POS() {
                           type="number"
                           value={item.quantity}
                           onChange={(e) => updateQuantity(item.productId, parseInt(e.target.value) || 1)}
-                          className="w-10 text-center text-xs font-bold bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          className="text-slate-700 w-10 text-center text-xs font-bold bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                         <button 
                           onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                          className="p-1 text-slate-400 hover:text-indigo-600 transition-colors"
+                          className="p-1 text-slate-800 hover:text-indigo-600 transition-colors"
                         >
                           <Plus size={14} />
                         </button>
@@ -537,8 +537,8 @@ export default function POS() {
                       placeholder="Họ và tên khách hàng..."
                       value={quickCustomerInfo.name}
                       onChange={(e) => setQuickCustomerInfo({...quickCustomerInfo, name: e.target.value})}
-                      className={`w-full pl-9 pr-3 py-2 bg-white border rounded-xl text-sm outline-none focus:ring-2 transition-all shadow-sm ${
-                        paymentMode === 'DEBT' ? 'border-rose-100 focus:ring-rose-500 placeholder:text-rose-200' : 'border-indigo-100 focus:ring-indigo-500 placeholder:text-indigo-200'
+                      className={`text-slate-900 w-full pl-9 pr-3 py-2 bg-white border rounded-xl text-sm outline-none focus:ring-2 transition-all shadow-sm ${
+                        paymentMode === 'DEBT' ? 'border-rose-100 focus:ring-rose-500 placeholder:text-rose-200' : 'border-indigo-100 focus:ring-indigo-500 placeholder:text-indigo-300'
                       }`}
                     />
                   </div>
@@ -551,7 +551,7 @@ export default function POS() {
                       value={quickCustomerInfo.phone}
                       onChange={(e) => setQuickCustomerInfo({...quickCustomerInfo, phone: e.target.value})}
                       className={`w-full pl-9 pr-3 py-2 bg-white border rounded-xl text-sm outline-none focus:ring-2 transition-all shadow-sm ${
-                        paymentMode === 'DEBT' ? 'border-rose-100 focus:ring-rose-500 placeholder:text-rose-200' : 'border-indigo-100 focus:ring-indigo-500 placeholder:text-indigo-200'
+                        paymentMode === 'DEBT' ? 'border-rose-100 focus:ring-rose-500 placeholder:text-rose-200' : 'border-indigo-100 focus:ring-indigo-500 placeholder:text-indigo-300'
                       }`}
                     />
                   </div>

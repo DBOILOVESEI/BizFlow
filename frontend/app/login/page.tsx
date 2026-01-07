@@ -64,7 +64,9 @@ export default function Login() {
 
         // optional redirect by role
         if (loggedInUser.role === 'OWNER') {
-          router.push('/dashboard')
+          router.push(ENDPOINTS.DASHBOARD)
+        } else if (loggedInUser.role === 'EMPLOYEE') {
+          router.push(ENDPOINTS.POS)
         }
 
         

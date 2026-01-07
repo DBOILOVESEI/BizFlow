@@ -8,5 +8,7 @@ export const ENDPOINTS = {
     FORGOT_PASSWORD: '/auth/forgot-password',
     PRODUCTS: '/products',
     SIGNUP: "/signup",
+    DASHBOARD: "/dashboard",
+    POS: "/pos",
     // ...
 };
