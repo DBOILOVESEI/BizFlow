@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Package,
   Plus,
@@ -15,13 +15,14 @@ import {
   AlertCircle,
   History // Vẫn giữ import History dù không dùng trong code gốc
 } from 'lucide-react';
+import { useAuth } from "../../modules/useAuth";
+import { API_BASE_URL, ENDPOINTS } from '../../modules/api/api.config';
 
 import MainLayout from "../../components/MainLayout";
 
 // Định nghĩa lại Types cơ bản (thay thế import)
 type UnitOfMeasure = {
   name: string;
-  multiplier: number;
   price: number;
 };
 
@@ -36,11 +37,8 @@ type Product = {
   units: UnitOfMeasure[];
 };
 
-// =================================================================
-// CHUYỂN ĐỔI THÀNH FUNCTION CƠ BẢN KHÔNG DÙNG INTERFACE HOẶC PROPS
-// =================================================================
-
-export default function POS() {
+export default function Inventory() {
+  const { user, logout } = useAuth();
   // Dữ liệu mẫu (thay thế props)
   const [products, setProducts] = useState<Product[]>([
     {
@@ -51,27 +49,7 @@ export default function POS() {
       baseUnit: 'Chai',
       stockLevel: 150,
       minStock: 50,
-      units: [{ name: 'Chai', multiplier: 1, price: 5000 }],
-    },
-    {
-      id: 'p2',
-      name: 'Gạo Tẻ Thơm ST25 (5kg)',
-      sku: 'GT002',
-      category: 'Thực phẩm',
-      baseUnit: 'Bao',
-      stockLevel: 8, // Low stock demo
-      minStock: 10,
-      units: [{ name: 'Bao', multiplier: 1, price: 120000 }],
-    },
-    {
-      id: 'p3',
-      name: 'Mì Tôm Hảo Hảo',
-      sku: 'MT003',
-      category: 'Thực phẩm',
-      baseUnit: 'Gói',
-      stockLevel: 250,
-      minStock: 100,
-      units: [{ name: 'Gói', multiplier: 1, price: 5000 }],
+      units: [{ name: 'Chai', price: 5000 }],
     },
   ]);
 
@@ -92,6 +70,121 @@ export default function POS() {
     stockLevel: '', // string
     baseUnit: '',
   });
+
+  const onNotify = (notif: { title: string; message: string; type: 'info' | 'success' | 'error' }) => {
+    console.log(`Notification (${notif.type}): ${notif.title} - ${notif.message}`);
+    alert(`${notif.title}: ${notif.message}`); // Dùng alert để demo
+  };
+
+  const fetchProducts = async () => {
+      // Giả định endpoint API đã được tạo
+      try {
+        if (!user) {
+          return null;
+        }
+        const response = await fetch(`${API_BASE_URL}${ENDPOINTS.INVENTORY}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            // Thêm token Auth nếu cần thiết
+            'Authorization': `Bearer ${user.token}`,
+          },
+        });
+  
+        if (!response.ok) {
+          throw new Error('Không thể tải danh sách sản phẩm');
+        }
+  
+        // Mô phỏng dữ liệu trả về từ server (thay thế bằng response.json() thực tế)
+        const data = await response.json(); 
+        const products_data = data.products_data
+  
+        console.log(data.msg);
+  
+        // Nếu không gọi được API, dùng dữ liệu mẫu thay thế để test UI
+        if (products_data.length === 0) {
+          // Dữ liệu mẫu thay thế (Nếu API fail/chưa setup)
+          const sampleData: Product[] = [
+            {
+              id: 'p1',
+              name: 'Nước Khoáng Lavie 400ml',
+              sku: 'NK001',
+              category: 'Đồ uống',
+              baseUnit: 'Chai',
+              stockLevel: 150,
+              minStock: 50,
+              units: [
+                { name: 'Chai', price: 5000 }
+              ],
+            }
+          ];
+
+          onNotify({ title: 'Cảnh báo', message: 'Dùng dữ liệu mẫu do không thể kết nối Inventory API.', type: 'info' });
+          setProducts(sampleData);
+        } else {
+          setProducts(products_data);
+        }
+  
+      } catch (error: any) {
+        console.error('Error fetching products:', error);
+        onNotify({ title: 'Lỗi API', message: error.message || 'Không thể tải dữ liệu sản phẩm.', type: 'error' });
+        // Thêm data mẫu dự phòng
+        const sampleData: Product[] = [
+          {
+            id: 'p1',
+            name: 'Nước Khoáng Lavie 500ml',
+            sku: 'NK001',
+            category: 'Đồ uống',
+            baseUnit: 'Chai',
+            stockLevel: 1500000,
+            minStock: 50,
+            units: [
+              { name: 'Chai', price: 5000 }
+            ],
+          },
+          {
+            id: 'p2',
+            name: 'Gạo Tẻ Thơm ST25 (5kg)',
+            sku: 'GT002',
+            category: 'Thực phẩm',
+            baseUnit: 'Bao(5kg)',
+            stockLevel: 80,
+            minStock: 20,
+            units: [
+              { name: 'Bao(5kg)', price: 120000 }
+            ],
+          },
+          {
+            id: 'p3',
+            name: 'Mì Tôm Hảo Hảo (Thùng)',
+            sku: 'MT003',
+            category: 'Thực phẩm',
+            baseUnit: 'Gói',
+            stockLevel: 30,
+            minStock: 10,
+            units: [
+              { name: 'Thùng(30)', price: 150000 },
+              { name: 'Gói', price: 5000 },
+            ],
+          },
+          {
+            id: 'p4',
+            name: 'Sữa Tươi Vinamilk 1L',
+            sku: 'ST004',
+            category: 'Đồ uống',
+            baseUnit: 'Hộp',
+            stockLevel: 220,
+            minStock: 100,
+            units: [
+              { name: 'Hộp', price: 35000 },
+              { name: 'Thùng(12)', price: 380000 },
+            ],
+          },
+        ];
+
+        setProducts(sampleData);
+      }
+    };
 
   const filtered = products.filter(p =>
     p.name.toLowerCase().includes(filter.toLowerCase()) ||
@@ -165,7 +258,7 @@ export default function POS() {
         stockLevel: parseInt(formData.stockLevel) || 0,
         minStock: 10,
         units: [
-          { name: formData.baseUnit, multiplier: 1, price: parseInt(formData.price) || 0 }
+          { name: formData.baseUnit, price: parseInt(formData.price) || 0 }
         ]
       };
       onUpdateProducts([productToAdd, ...products]);
@@ -175,8 +268,18 @@ export default function POS() {
     resetForm();
   };
 
+  useEffect(() => {
+      if (user) {
+        fetchProducts();
+      }
+    }, [user]);
+  
+    if (!user) {
+      return null;
+    }
+
   return (
-    <MainLayout title="Kho hàng">
+    <MainLayout title="Quản lý kho" user={user} logout={logout}>
     <div className="space-y-6 p-6 bg-gray-50 min-h-screen">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

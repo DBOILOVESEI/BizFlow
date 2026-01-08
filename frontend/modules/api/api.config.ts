@@ -11,5 +11,6 @@ export const ENDPOINTS = {
     DASHBOARD: "/dashboard",
     INVENTORY: "/inventory",
     ORDER: "/order",
+    POS: "/pos"
     // ...
 };

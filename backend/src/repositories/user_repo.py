@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 # repositories/user_repo.py
 from infrastructure.databases.engine import session
 from infrastructure.models.user_model import UserModel
+from . import role_repo
 
 def get_by_username(username):
     return session.query(UserModel).filter_by(username=username).first()
@@ -43,3 +44,14 @@ def create_user(username, password_hash, email, role_id, owner_id):
     except InterruptedError:
         session.rollback()
         return None
+
+def get_employees_by_owner_id(owner_id: int):
+    employee_role_id = role_repo.get_role_id_by_name("EMPLOYEE")
+
+    if not employee_role_id:
+        return []
+    
+    return session.query(UserModel).filter(
+        UserModel.owner_id == owner_id,
+        UserModel.role_id == employee_role_id
+    ).all()

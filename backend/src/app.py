@@ -5,6 +5,7 @@ from infrastructure import databases
 # BLUEPRINTS
 from api.controllers.auth_controller import auth_bp
 from api.controllers.orders import orders_bp
+from api.controllers.staff import employee_bp
 #from routes import auth_bp
 #from routes import admin_bp
 
@@ -18,6 +19,7 @@ cors.init_app(app)
 # Register blueprints
 app.register_blueprint(auth_bp)
 app.register_blueprint(orders_bp)
+app.register_blueprint(employee_bp)
 
 @app.route("/", methods=["GET"])
 def health_check():

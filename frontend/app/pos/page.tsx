@@ -135,7 +135,10 @@ export default function POS() {
   // --- FETCH DATA TỪ SERVER ---
   const fetchProducts = async () => {
     // Giả định endpoint API đã được tạo
-    try {      
+    try {
+      if (!user) {
+        return null;
+      }
       const response = await fetch(`${API_BASE_URL}${ENDPOINTS.INVENTORY}`, {
         method: 'GET',
         headers: {
