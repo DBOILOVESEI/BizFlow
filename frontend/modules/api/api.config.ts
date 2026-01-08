@@ -9,6 +9,7 @@ export const ENDPOINTS = {
     PRODUCTS: '/products',
     SIGNUP: "/signup",
     DASHBOARD: "/dashboard",
-    POS: "/pos",
+    INVENTORY: "/inventory",
+    ORDER: "/order",
     // ...
 };

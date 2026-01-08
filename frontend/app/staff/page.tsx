@@ -9,7 +9,7 @@ import {
   User as UserIcon, Briefcase 
 } from 'lucide-react';
 
-export default function POS() {
+export default function Staff() {
   // 1. Khởi tạo dữ liệu mẫu
   const [staff, setStaff] = useState([
     { id: '1', name: 'Nguyễn Văn Nhân', role: 'EMPLOYEE', status: 'active', joinedDate: '20/12/2023' },
@@ -161,7 +161,7 @@ export default function POS() {
                       required 
                       value={newStaff.name}
                       onChange={(e: any) => setNewStaff({...newStaff, name: e.target.value})}
-                      className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="text-slate-500 w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                       placeholder="VD: Nguyễn Văn A"
                     />
                   </div>
@@ -176,40 +176,15 @@ export default function POS() {
                       type="password"
                       value={newStaff.password}
                       onChange={(e: any) => setNewStaff({...newStaff, password: e.target.value})}
-                      className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="text-slate-500 w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                       placeholder="••••••••"
                     />
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Vai trò</label>
-                  <div className="grid grid-cols-2 gap-3 mt-1.5">
-                    <button 
-                      type="button"
-                      onClick={() => setNewStaff({...newStaff, role: 'EMPLOYEE'})}
-                      className={`p-3 rounded-xl border-2 text-xs font-bold flex flex-col items-center gap-2 transition-all ${
-                        newStaff.role === 'EMPLOYEE' ? 'border-indigo-600 bg-indigo-50 text-indigo-600' : 'border-slate-100 text-slate-400'
-                      }`}
-                    >
-                      <Briefcase size={16} /> Nhân viên
-                    </button>
-                    <button 
-                      type="button"
-                      onClick={() => setNewStaff({...newStaff, role: 'OWNER'})}
-                      className={`p-3 rounded-xl border-2 text-xs font-bold flex flex-col items-center gap-2 transition-all ${
-                        newStaff.role === 'OWNER' ? 'border-indigo-600 bg-indigo-50 text-indigo-600' : 'border-slate-100 text-slate-400'
-                      }`}
-                    >
-                      <ShieldCheck size={16} /> Quản lý
-                    </button>
-                  </div>
-                </div>
-
                 <button 
                   type="submit"
-                  className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black text-sm shadow-xl hover:bg-indigo-700 transition-all"
-                >
+                  className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black text-sm shadow-xl hover:bg-indigo-700 transition-all">
                   Xác nhận tạo tài khoản
                 </button>
               </form>

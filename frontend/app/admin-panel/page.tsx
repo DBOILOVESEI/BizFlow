@@ -25,13 +25,15 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import MainLayout from "../../components/MainLayout";  
 
 type AdminTab = 'owners' | 'analytics' | 'config';
 
-const AdminPanel: React.FC = () => {
+export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState<AdminTab>('owners');
 
   return (
+    <MainLayout title="Quản lý hệ thống">
     <div className="flex flex-col h-full gap-8">
       {/* Header tập trung */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-6 rounded-4xl border border-slate-200 shadow-sm">
@@ -53,10 +55,11 @@ const AdminPanel: React.FC = () => {
         {activeTab === 'config' && <SystemConfigAndTemplates />}
       </div>
     </div>
+    </MainLayout>
   );
 };
 
-const OwnersManagement = () => {
+function OwnersManagement() {
   const [search, setSearch] = useState('');
   const [editingOwner, setEditingOwner] = useState<any>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -251,7 +254,7 @@ const OwnersManagement = () => {
   );
 };
 
-const SystemAnalytics = () => {
+function SystemAnalytics() {
   const data = [
     { name: 'Th1', revenue: 120, stores: 45 },
     { name: 'Th2', revenue: 155, stores: 52 },
@@ -298,7 +301,7 @@ const SystemAnalytics = () => {
   );
 };
 
-const SystemConfigAndTemplates = () => {
+function SystemConfigAndTemplates() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       {/* Cấu hình chung */}
@@ -419,5 +422,3 @@ const TemplateOption: React.FC<{ icon: React.ReactNode; label: string; active?: 
     {active && <CheckCircle2 className="text-indigo-600" size={18} />}
   </div>
 );
-
-export default AdminPanel;

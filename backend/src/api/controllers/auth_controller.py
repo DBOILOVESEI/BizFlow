@@ -36,40 +36,27 @@ def login():
         # hash error
         return jsonify({'msg': 'Server configuration error in password handling'}), 500
 
-    payload = {
-        'sub': str(users.user_id),
-        'role': role,   # 👈 role name
-        'iat': datetime.utcnow(),
-        'exp': datetime.utcnow() + timedelta(hours=2)
-    }
-
-    access_token = create_access_token(
+    token = create_access_token(
         identity=str(users.user_id),
         additional_claims={
         "role": role
         }
     )
-    """
-    token = jwt.encode(
-        payload,
-        current_app.config['SECRET_KEY'],
-        algorithm='HS256'
-    )
-    """
-    
+
     # Đảm bảo token luôn là string trước khi gửi đi
-    if isinstance(access_token, bytes):
-        access_token = access_token.decode('utf-8')
+    if isinstance(token, bytes):
+        token = token.decode('utf-8')
     
     # 4. Trả về token và thông tin user cần thiết
     return jsonify({
-        "access_token": access_token,
+        "access_token": token,
         "token_type": "Bearer",
         "user": {
             "id": str(users.user_id),
             "name": users.username,
             "email": users.email,
-            "role": role   # 👈 QUAN TRỌNG
+            "role": role,
+            "token": token
         }
     }), 200
 
@@ -131,6 +118,16 @@ def get_user_profile():
     claims = get_jwt()
     role = claims.get("role")
 
+    auth_header = request.headers.get('Authorization')
+
+    token = None
+
+    # 3. Trích xuất token từ header
+    if auth_header and auth_header.startswith('Bearer '):
+        # format lấy token thôi
+        token = auth_header[7:] # 👈 Đây là chuỗi token JWT gốc
+
+    # thêm sanity check 
     user = user_repo.get_by_id(user_id)
     if not user:
         return jsonify({"msg": "User not found"}), 404
@@ -139,5 +136,6 @@ def get_user_profile():
         "user_id": str(user.user_id),
         "username": user.username,
         "email": user.email,
-        "role_name": role
+        "role_name": role,
+        "token": token,
     }), 200

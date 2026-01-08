@@ -4,15 +4,24 @@
 import React, { useState } from 'react'
 import Sidebar from './Sidebar' // Import Sidebar
 import { Menu, Bell } from 'lucide-react'
-import { useAuth } from '../modules/useAuth' // Sử dụng hook useAuth của bạn
+import { useAuth } from '../modules/useAuth'
+import { User } from "../types"
 
 interface MainLayoutProps {
   children: React.ReactNode
   title: string
+  // THÊM PROP user VÀO ĐÂY
+  user: User | null; // Cần thay thế User bằng type thực tế
+  logout: () => void; // Thêm logout để truyền xuống Sidebar
 }
 
-const MainLayout: React.FC<MainLayoutProps> = ({ children, title }) => {
-  const { user, logout } = useAuth() // Giả sử useAuth cung cấp user và logout
+// pass hết vô đây
+// mấy trang kia mà load thì cứ pass user= logout=
+// vầy nè
+// <MainLayout title="Bán hàng/POS" user={user} logout={logout}>
+// nhớ gọi useAuth trên đầu func ko là die
+
+const MainLayout: React.FC<MainLayoutProps> = ({ children, title, user, logout }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   if (!user) {

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Search,
   ShoppingCart,
@@ -15,13 +15,13 @@ import {
   UserPlus,
   X,
   ChevronDown,
-  UserCheck
 } from 'lucide-react';
+import { API_BASE_URL, ENDPOINTS } from '../../modules/api/api.config';
+import { useAuth } from "../../modules/useAuth";
+
 import MainLayout from "../../components/MainLayout";
 
-// Định nghĩa lại các Types cần thiết (vì không dùng interface ngoài nữa)
-// Sử dụng các type đơn giản nhất có thể để tránh lỗi TS nếu không có cấu trúc đầy đủ
-// Dùng type cơ bản thay vì import từ '../../types'
+// ... [Giữ nguyên các Type và Enum] ...
 type Product = {
   id: string;
   name: string;
@@ -36,7 +36,7 @@ type Customer = {
   name: string;
   phone: string;
   debt: number;
-  purchaseHistory: any[]; // Giữ lại cho cấu trúc
+  purchaseHistory: any[];
 };
 
 type OrderItem = {
@@ -68,12 +68,6 @@ enum OrderStatus {
   COMPLETED = 'COMPLETED',
 }
 
-type User = {
-  id: string;
-  name: string;
-};
-
-// Import bổ sung icon cho các thành phần UI mới
 const Smartphone = ({ size, className }: { size: number, className: string }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -92,37 +86,42 @@ const Smartphone = ({ size, className }: { size: number, className: string }) =>
   </svg>
 );
 
-
-// =================================================================
-// CHUYỂN ĐỔI THÀNH FUNCTION CƠ BẢN KHÔNG DÙNG INTERFACE HOẶC PROPS
-// =================================================================
-
 export default function POS() {
+  const { user, logout } = useAuth();
 
-  // Dữ liệu mẫu (thay thế props)
-  const [sampleProducts, setSampleProducts] = useState<Product[]>([
-    { id: 'p1', name: 'Nước Khoáng Lavie 500ml', sku: 'NK001', stockLevel: 150, minStock: 50, units: [{ name: 'Chai', price: 5000 }, { name: 'Thùng(24)', price: 100000 }] },
-    { id: 'p2', name: 'Gạo Tẻ Thơm ST25 (5kg)', sku: 'GT002', stockLevel: 80, minStock: 20, units: [{ name: 'Bao(5kg)', price: 120000 }] },
-    { id: 'p3', name: 'Mì Tôm Hảo Hảo (Thùng)', sku: 'MT003', stockLevel: 30, minStock: 10, units: [{ name: 'Thùng(30)', price: 150000 }, { name: 'Gói', price: 5000 }] },
-    { id: 'p4', name: 'Sữa Tươi Vinamilk không đường 1L', sku: 'ST004', stockLevel: 220, minStock: 100, units: [{ name: 'Hộp', price: 35000 }, { name: 'Thùng(12)', price: 380000 }] },
-    { id: 'p5', name: 'Bánh Quy Kem Oreo', sku: 'BQ005', stockLevel: 60, minStock: 30, units: [{ name: 'Gói', price: 15000 }, { name: 'Hộp(24)', price: 300000 }] },
-    { id: 'p6', name: 'Bia Sài Gòn Latt 330ml', sku: 'BL006', stockLevel: 90, minStock: 40, units: [{ name: 'Lon', price: 12000 }, { name: 'Thùng(24)', price: 280000 }] },
-  ]);
-
-  const [sampleCustomers, setSampleCustomers] = useState<Customer[]>([
+  // --- STATE DỮ LIỆU CHÍNH ---
+  const [products, setProducts] = useState<Product[]>([]); // Sẽ fetch từ server
+  const [customers, setCustomers] = useState<Customer[]>([ // Dữ liệu khách hàng mẫu
     { id: 'c1', name: 'Nguyễn Văn An', phone: '0901234567', debt: 500000, purchaseHistory: [] },
     { id: 'c2', name: 'Trần Thị Bình', phone: '0987654321', debt: 0, purchaseHistory: [] },
     { id: 'c3', name: 'Lê Văn Cường', phone: '0777888999', debt: 150000, purchaseHistory: [] },
   ]);
 
-  const sampleUser: User = { id: 'u1', name: 'Quản lý Demo' };
+  // --- STATE NGHIỆP VỤ POS ---
+  const [search, setSearch] = useState('');
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [cart, setCart] = useState<OrderItem[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentMode, setPaymentMode] = useState<'CASH' | 'DEBT'>('CASH');
 
-  // Hàm mô phỏng onOrderCreated và onNotify
+  // State cho thông tin khách hàng nhập nhanh
+  const [quickCustomerInfo, setQuickCustomerInfo] = useState({ name: '', phone: '' });
+
+  // State cho form thêm khách hàng nhanh vào DB
+  const [showAddCustomer, setShowAddCustomer] = useState(false);
+  const [newCustomer, setNewCustomer] = useState({ name: '', phone: '' });
+  
+  const [aiInput, setAiInput] = useState('');
+  const [isAiProcessing, setIsAiProcessing] = useState(false);
+
+  // --- MOCK API CALLS & NOTIFICATION ---
   const onOrderCreated = (order: Order) => {
     console.log('Order created (mock):', order);
     // Cập nhật nợ giả
-    if (order.debtAmount > 0) {
-      setSampleCustomers(prev => prev.map(c => 
+    if (order.debtAmount > 0 && order.customerId) {
+      setCustomers(prev => prev.map(c => 
         c.id === order.customerId ? { ...c, debt: c.debt + order.debtAmount } : c
       ));
     }
@@ -133,43 +132,81 @@ export default function POS() {
     alert(`${notif.title}: ${notif.message}`); // Dùng alert để demo
   };
 
-  const products = sampleProducts;
-  const customers = sampleCustomers;
-  const user = sampleUser;
+  // --- FETCH DATA TỪ SERVER ---
+  const fetchProducts = async () => {
+    // Giả định endpoint API đã được tạo
+    try {      
+      const response = await fetch(`${API_BASE_URL}${ENDPOINTS.INVENTORY}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          // Thêm token Auth nếu cần thiết
+          'Authorization': `Bearer ${user.token}`,
+        },
+      });
 
-  // Giữ lại tất cả state và logic
-  const [search, setSearch] = useState('');
-  const [customerSearch, setCustomerSearch] = useState('');
-  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [cart, setCart] = useState<OrderItem[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentMode, setPaymentMode] = useState<'CASH' | 'DEBT'>('CASH');
+      if (!response.ok) {
+        throw new Error('Không thể tải danh sách sản phẩm');
+      }
 
-  const [aiInput, setAiInput] = useState('');
-  const [isAiProcessing, setIsAiProcessing] = useState(false);
+      // Mô phỏng dữ liệu trả về từ server (thay thế bằng response.json() thực tế)
+      const data = await response.json(); 
+      const products_data = data.products_data
 
-  // State cho thông tin khách hàng nhập nhanh (Dùng cho cả tiền mặt và ghi nợ)
-  const [quickCustomerInfo, setQuickCustomerInfo] = useState({ name: '', phone: '' });
+      console.log(data.msg);
 
-  // State cho form thêm khách hàng nhanh vào DB
-  const [showAddCustomer, setShowAddCustomer] = useState(false);
-  const [newCustomer, setNewCustomer] = useState({ name: '', phone: '' });
+      // Nếu không gọi được API, dùng dữ liệu mẫu thay thế để test UI
+      if (products_data.length === 0) {
+        // Dữ liệu mẫu thay thế (Nếu API fail/chưa setup)
+        const sampleData: Product[] = [
+          { id: 'p1', name: 'Nước Khoáng Lavie 500ml', sku: 'NK001', stockLevel: 150, minStock: 50, units: [{ name: 'Chai', price: 5000 }, { name: 'Thùng(24)', price: 100000 }] },
+          { id: 'p2', name: 'Gạo Tẻ Thơm ST25 (5kg)', sku: 'GT002', stockLevel: 80, minStock: 20, units: [{ name: 'Bao(5kg)', price: 120000 }] },
+          { id: 'p3', name: 'Mì Tôm Hảo Hảo (Thùng)', sku: 'MT003', stockLevel: 30, minStock: 10, units: [{ name: 'Thùng(30)', price: 150000 }, { name: 'Gói', price: 5000 }] },
+          { id: 'p4', name: 'Sữa Tươi Vinamilk 1L', sku: 'ST004', stockLevel: 220, minStock: 100, units: [{ name: 'Hộp', price: 35000 }, { name: 'Thùng(12)', price: 380000 }] },
+        ];
+        onNotify({ title: 'Cảnh báo', message: 'Dùng dữ liệu mẫu do không thể kết nối Inventory API.', type: 'info' });
+        setProducts(sampleData);
+      } else {
+        setProducts(products_data);
+      }
 
-  const filteredProducts = useMemo(() => {
-    return products.filter(p =>
-      p.name.toLowerCase().includes(search.toLowerCase()) || p.sku.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [products, search]);
+    } catch (error: any) {
+      console.error('Error fetching products:', error);
+      onNotify({ title: 'Lỗi API', message: error.message || 'Không thể tải dữ liệu sản phẩm.', type: 'error' });
+      // Thêm data mẫu dự phòng
+      const sampleData: Product[] = [
+        { id: 'p1', name: 'Nước Khoáng Lavie 500ml', sku: 'NK001', stockLevel: 150, minStock: 50, units: [{ name: 'Chai', price: 5000 }, { name: 'Thùng(24)', price: 100000 }] },
+        { id: 'p2', name: 'Gạo Tẻ Thơm ST25 (5kg)', sku: 'GT002', stockLevel: 80, minStock: 20, units: [{ name: 'Bao(5kg)', price: 120000 }] },
+      ];
+      setProducts(sampleData);
+    }
+  };
 
-  const filteredCustomers = useMemo(() => {
-    if (!customerSearch) return [];
-    return customers.filter(c =>
+  useEffect(() => {
+    if (user) {
+      fetchProducts();
+    }
+  }, [user]);
+
+  if (!user) {
+    return null;
+  }
+
+  // --- LOGIC TÍNH TOÁN INLINE (thay cho useMemo) ---
+  const filteredProducts = products.filter(p =>
+    p.name.toLowerCase().includes(search.toLowerCase()) || p.sku.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const filteredCustomers = customerSearch.length > 0
+    ? customers.filter(c =>
       c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
       c.phone.includes(customerSearch)
-    );
-  }, [customers, customerSearch]);
+    )
+    : [];
+    
+  const total = cart.reduce((sum, item) => sum + item.total, 0);
 
+  // --- LOGIC GIỎ HÀNG ---
   const addToCart = (product: Product) => {
     const existing = cart.find(item => item.productId === product.id);
     if (existing) {
@@ -217,9 +254,8 @@ export default function POS() {
       setCart([]);
     }
   };
-
-  const total = cart.reduce((sum, item) => sum + item.total, 0);
-
+ 
+  // --- LOGIC XỬ LÝ KHÁCH HÀNG ---
   const handleQuickAddCustomer = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCustomer.name || !newCustomer.phone) {
@@ -235,8 +271,8 @@ export default function POS() {
       purchaseHistory: []
     };
 
-    // Thêm vào danh sách mẫu
-    setSampleCustomers(prev => [...prev, created]);
+    // Thêm vào danh sách khách hàng (Mô phỏng lưu DB)
+    setCustomers(prev => [...prev, created]);
 
     setSelectedCustomer(created);
     setShowAddCustomer(false);
@@ -244,10 +280,10 @@ export default function POS() {
     onNotify({ title: "Thành công", message: "Đã thêm khách hàng mới", type: "success" });
   };
 
+  // --- LOGIC THANH TOÁN ---
   const handleCheckout = () => {
     if (cart.length === 0) return;
 
-    // Kiểm tra thông tin khách hàng nếu chưa chọn khách có sẵn
     if (!selectedCustomer && (!quickCustomerInfo.name || !quickCustomerInfo.phone)) {
       onNotify({ title: "Thiếu thông tin", message: "Vui lòng nhập Họ tên và Số điện thoại khách hàng.", type: "info" });
       return;
@@ -270,6 +306,7 @@ export default function POS() {
       createdBy: user.name
     };
 
+    // Mô phỏng gửi order lên server
     setTimeout(() => {
       onOrderCreated(newOrder); // Dùng hàm mô phỏng
       setCart([]);
@@ -284,26 +321,15 @@ export default function POS() {
     }, 1000);
   };
 
-  // Giữ lại placeholder cho AI Parsing
-  /*
-  const handleAiParsing = async () => {
-    if (!aiInput.trim()) return;
-    setIsAiProcessing(true);
-    // ... logic AI parsing (bị comment ban đầu)
-    setAiInput('');
-    setIsAiProcessing(false);
-    onNotify({ title: "Thông báo", message: "Chức năng AI hiện chưa được kết nối.", type: "info" });
-  };
-  */
-
   return (
-    <MainLayout title="Bán hàng/POS"> 
+    <MainLayout title="Bán hàng/POS" user={user} logout={logout}>
     <div className="h-full flex flex-col gap-6 relative">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
         
         {/* CỘT TRÁI: DANH SÁCH SẢN PHẨM */}
         <div className="lg:col-span-2 flex flex-col gap-4 min-h-0">
-          {/* AI BAR */}
+          
+          {/* AI BAR (Giữ nguyên) */}
           <div className="bg-linear-to-r from-indigo-50 to-blue-50 border border-indigo-100 rounded-2xl p-4 shadow-sm">
             <div className="flex items-center gap-3 mb-3">
               <div className="bg-indigo-600 p-1.5 rounded-lg shadow-lg shadow-indigo-200">
@@ -343,32 +369,36 @@ export default function POS() {
             </div>
 
             <div className="flex-1 overflow-y-auto grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 pr-2 custom-scrollbar">
-              {filteredProducts.map(p => (
-                <button 
-                  key={p.id}
-                  onClick={() => addToCart(p)}
-                  className="p-3 bg-white border border-slate-200 rounded-2xl hover:border-indigo-500 hover:shadow-xl hover:-translate-y-1 transition-all text-left group relative overflow-hidden"
-                >
-                  <div className="h-28 bg-slate-50 rounded-xl mb-3 flex items-center justify-center text-slate-300 group-hover:bg-indigo-50 transition-colors">
-                    <Package size={40} className="group-hover:text-indigo-200 transition-colors" />
-                  </div>
-                  <p className="font-bold text-slate-800 text-sm line-clamp-2 min-h-[40px] leading-tight mb-2">{p.name}</p>
-                  <div className="flex justify-between items-center">
-                    <span className="text-indigo-600 font-black text-base">{p.units[0].price.toLocaleString()}đ</span>
-                    <div className={`w-2 h-2 rounded-full ${p.stockLevel > p.minStock ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                  </div>
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="bg-indigo-600 text-white p-1.5 rounded-lg shadow-lg">
-                      <Plus size={14} />
+              {products.length === 0 ? (
+                <div className="col-span-4 text-center py-10 text-slate-400">Đang tải sản phẩm hoặc chưa có dữ liệu...</div>
+              ) : (
+                filteredProducts.map(p => (
+                  <button 
+                    key={p.id}
+                    onClick={() => addToCart(p)}
+                    className="p-3 bg-white border border-slate-200 rounded-2xl hover:border-indigo-500 hover:shadow-xl hover:-translate-y-1 transition-all text-left group relative overflow-hidden"
+                  >
+                    <div className="h-28 bg-slate-50 rounded-xl mb-3 flex items-center justify-center text-slate-300 group-hover:bg-indigo-50 transition-colors">
+                      <Package size={40} className="group-hover:text-indigo-200 transition-colors" />
                     </div>
-                  </div>
-                </button>
-              ))}
+                    <p className="font-bold text-slate-800 text-sm line-clamp-2 min-h-[40px] leading-tight mb-2">{p.name}</p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-indigo-600 font-black text-base">{p.units[0].price.toLocaleString()}đ</span>
+                      <div className={`w-2 h-2 rounded-full ${p.stockLevel > p.minStock ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                    </div>
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="bg-indigo-600 text-white p-1.5 rounded-lg shadow-lg">
+                        <Plus size={14} />
+                      </div>
+                    </div>
+                  </button>
+                ))
+              )}
             </div>
           </div>
         </div>
 
-        {/* CỘT PHẢI: GIỎ HÀNG VÀ THANH TOÁN */}
+        {/* CỘT PHẢI: GIỎ HÀNG VÀ THANH TOÁN (Giữ nguyên logic cũ) */}
         <div className="bg-white border border-slate-200 rounded-2xl flex flex-col overflow-hidden shadow-xl">
           <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
             <h3 className="font-black text-slate-800 flex items-center gap-2 uppercase tracking-wide">
@@ -519,7 +549,7 @@ export default function POS() {
           {/* TOTAL & ACTIONS */}
           <div className="p-5 border-t border-slate-100 bg-slate-50/50 space-y-4">
             
-            {/* Form thông tin khách hàng nhập nhanh (Chỉ hiện khi chưa có khách chọn từ hệ thống) */}
+            {/* Form thông tin khách hàng nhập nhanh */}
             {!selectedCustomer && (
               <div className={`p-4 border rounded-2xl space-y-3 animate-in slide-in-from-bottom-2 duration-300 transition-all ${
                 paymentMode === 'DEBT' ? 'bg-rose-50 border-rose-100' : 'bg-indigo-50 border-indigo-100'
@@ -602,7 +632,7 @@ export default function POS() {
         </div>
       </div>
 
-      {/* QUICK ADD CUSTOMER MODAL */}
+      {/* QUICK ADD CUSTOMER MODAL (Giữ nguyên) */}
       {showAddCustomer && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
           <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in duration-200">

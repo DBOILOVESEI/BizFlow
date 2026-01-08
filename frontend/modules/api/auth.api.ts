@@ -2,11 +2,7 @@
 import { User } from '../../types' // Đảm bảo đường dẫn đúng
 
 import {API_BASE_URL, ENDPOINTS} from "./api.config"
-/**
- * Lấy thông tin người dùng hiện tại từ server bằng cách sử dụng Access Token
- * @param token Access Token đã lưu
- * @returns Promise<User>
- */
+
 export async function fetchUserProfile(token: string): Promise<User> {
   const response = await fetch(`${API_BASE_URL}${ENDPOINTS.AUTH}`, {
     method: 'GET',
@@ -23,12 +19,20 @@ export async function fetchUserProfile(token: string): Promise<User> {
 
   const userData = await response.json()
   
-  // Bạn cần ánh xạ dữ liệu nhận được từ server vào type User của frontend
+  // expected backend return
+  // return jsonify({
+  //    "user_id": str(user.user_id),
+  //    "username": user.username,
+  //    "email": user.email,
+  //    "role_name": role,
+  //    "token": token, --> need
+  // }), 200
   return {
-    id: userData.user_id, // Giả sử server trả về user_id
+    id: userData.user_id,
     name: userData.username, 
     email: userData.email,
-    role: userData.role_name, // Giả sử server trả về role_name
-    // ... các trường khác
+    role: userData.role_name,
+    token: userData.token,
+
   } as User // Ép kiểu, đảm bảo cấu trúc khớp với type User
 }

@@ -206,7 +206,7 @@ export default function POS() {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider">
+            <thead className="bg-slate-50 text-slate-800 text-xs font-semibold uppercase tracking-wider">
               <tr>
                 <th className="px-6 py-4">Sản phẩm</th>
                 <th className="px-6 py-4">Danh mục</th>
@@ -234,7 +234,7 @@ export default function POS() {
                       {p.category}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm font-medium">
+                  <td className="text-slate-800 px-6 py-4 text-sm font-medium">
                     {p.units[0].price.toLocaleString()}đ
                   </td>
                   <td className="px-6 py-4">
@@ -310,7 +310,7 @@ export default function POS() {
                       autoFocus
                       value={formData.name}
                       onChange={(e) => setFormData({...formData, name: e.target.value})}
-                      className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                      className="text-indigo-600 font-bold w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                       placeholder="Nhập tên sản phẩm..."
                     />
                   </div>
@@ -324,7 +324,7 @@ export default function POS() {
                       <input
                         value={formData.category}
                         onChange={(e) => setFormData({...formData, category: e.target.value})}
-                        className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                        className="text-indigo-600 font-bold w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                         placeholder="Đồ uống, Thực phẩm..."
                       />
                     </div>
@@ -354,7 +354,7 @@ export default function POS() {
                         type="number"
                         value={formData.stockLevel}
                         onChange={(e) => setFormData({...formData, stockLevel: e.target.value})}
-                        className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                        className="text-indigo-600 font-bold w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                         placeholder="0"
                       />
                     </div>
@@ -367,7 +367,7 @@ export default function POS() {
                         required
                         value={formData.baseUnit}
                         onChange={(e) => setFormData({...formData, baseUnit: e.target.value})}
-                        className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                        className="text-indigo-600 font-bold w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                         placeholder="Cái, Chai, Túi..."
                       />
                     </div>

@@ -11,6 +11,7 @@ import {
   Loader2
 } from 'lucide-react'
 import MainLayout from "../../components/MainLayout";
+import { useAuth } from "../../modules/useAuth";
 
 // Không dùng import types từ bên ngoài, định nghĩa lại cơ bản
 type Order = { id: string; totalAmount: number; [key: string]: any };
@@ -48,6 +49,8 @@ const StatCard = ({ title, value, trend, trendUp, icon }: { title: string; value
 
 
 export default function Dashboard() {
+  const { user, logout } = useAuth();
+  
   const [orders, setOrders] = useState<Order[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
@@ -115,7 +118,7 @@ export default function Dashboard() {
   ]
 
   return (
-    <MainLayout title="Tổng quan"> 
+    <MainLayout title="Tồng quan" user={user} logout={logout}>
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
@@ -153,7 +156,7 @@ export default function Dashboard() {
         </div>
 
         <div className="bg-white p-6 rounded-xl border shadow-sm">
-          <h3 className="text-lg font-semibold mb-6">Biểu đồ Doanh thu (Tuần này)</h3>
+          <h3 className="text-slate-800 text-lg font-semibold mb-6">Biểu đồ Doanh thu (Tuần này)</h3>
           <div className="h-96">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData}>
