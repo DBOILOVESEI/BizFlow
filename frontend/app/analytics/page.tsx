@@ -1,5 +1,6 @@
 "use client";
 
+import { useAuth } from "../../modules/useAuth";
 import React, { useMemo, useState } from 'react';
 import { 
   XAxis, 
@@ -126,7 +127,8 @@ const mockOrders: Order[] = [
 
 // Function component chính đã refactor
 export default function AnalyticsDashboard() {
-const orders = mockOrders;
+  const { user, logout } = useAuth();
+  const orders = mockOrders;
   const customers = mockCustomers;
   const products = mockProducts;
 
@@ -197,7 +199,7 @@ const orders = mockOrders;
 
   // --- HIỂN THỊ (RETURN JSX) ---
   return (
-    <MainLayout title="Báo cáo">
+    <MainLayout title="Báo Cáo" user={user} logout={logout}>
     <div className="space-y-8 pb-10">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

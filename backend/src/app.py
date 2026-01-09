@@ -9,6 +9,9 @@ from api.controllers.staff import employee_bp
 #from routes import auth_bp
 #from routes import admin_bp
 
+from repositories import role_repo
+role_repo.create_roles()
+
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "super-secret-key"
 

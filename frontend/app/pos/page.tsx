@@ -195,7 +195,6 @@ export default function POS() {
     return null;
   }
 
-  // --- LOGIC TÍNH TOÁN INLINE (thay cho useMemo) ---
   const filteredProducts = products.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase()) || p.sku.toLowerCase().includes(search.toLowerCase())
   );
@@ -284,45 +283,59 @@ export default function POS() {
   };
 
   // --- LOGIC THANH TOÁN ---
-  const handleCheckout = () => {
-    if (cart.length === 0) return;
+  const handleCheckout = async () => {
+  if (cart.length === 0 || isProcessing) return;
 
-    if (!selectedCustomer && (!quickCustomerInfo.name || !quickCustomerInfo.phone)) {
-      onNotify({ title: "Thiếu thông tin", message: "Vui lòng nhập Họ tên và Số điện thoại khách hàng.", type: "info" });
-      return;
-    }
+  // Lấy tên khách hàng từ hệ thống HOẶC từ ô nhập nhanh
+  const customerName = selectedCustomer?.name || quickCustomerInfo.name;
 
-    setIsProcessing(true);
-    const finalCustomerName = selectedCustomer?.name || quickCustomerInfo.name;
-    const finalCustomerId = selectedCustomer?.id;
+  // SỬA TẠI ĐÂY: Cho phép ghi nợ nếu có ID hệ thống HOẶC có tên nhập tay
+  if (paymentMode === 'DEBT' && !customerName) {
+    alert("Vui lòng nhập tên khách hàng hoặc chọn khách hàng từ danh sách để ghi nợ!");
+    return;
+  }
 
-    const newOrder: Order = {
-      id: `ORD-${Date.now().toString().slice(-6)}`,
-      customerId: finalCustomerId,
-      customerName: finalCustomerName,
+  setIsProcessing(true);
+  try {
+    const payload = {
+      // Nếu khách hệ thống thì có ID, nếu khách nhập tay thì để null
+      customerId: selectedCustomer?.id || null, 
+      customerName: customerName || "Khách lẻ",
+      customerPhone: selectedCustomer?.phone || quickCustomerInfo.phone || "",
       items: cart,
       totalAmount: total,
+      paymentMode: paymentMode,
+      // Tính toán số tiền đã trả và tiền nợ
       paidAmount: paymentMode === 'CASH' ? total : 0,
       debtAmount: paymentMode === 'DEBT' ? total : 0,
-      status: OrderStatus.CONFIRMED,
-      createdAt: new Date().toISOString(),
-      createdBy: user.name
     };
 
-    // Mô phỏng gửi order lên server
-    setTimeout(() => {
-      onOrderCreated(newOrder); // Dùng hàm mô phỏng
+    const response = await fetch(`${API_BASE_URL}/checkout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${user.token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (response.ok) {
+      alert("Thanh toán thành công!");
+      // Reset toàn bộ form sau khi thành công
       setCart([]);
       setSelectedCustomer(null);
       setQuickCustomerInfo({ name: '', phone: '' });
-      setIsProcessing(false);
-      onNotify({ // Dùng hàm mô phỏng
-        title: "Đơn hàng hoàn tất",
-        message: `Đơn hàng ${newOrder.id} đã được xử lý thành công.`,
-        type: 'success'
-      });
-    }, 1000);
-  };
+      // Bạn có thể thêm lệnh in ở đây nếu cần
+    } else {
+      const err = await response.json();
+      alert("Lỗi: " + err.msg);
+    }
+  } catch (error) {
+    alert("Lỗi kết nối server!");
+  } finally {
+    setIsProcessing(false);
+  }
+};
 
   return (
     <MainLayout title="Bán hàng/POS" user={user} logout={logout}>
@@ -347,7 +360,7 @@ export default function POS() {
                 onChange={(e) => setAiInput(e.target.value)}
                 //onKeyDown={(e) => e.key === 'Enter' && handleAiParsing()}
                 placeholder="Nhập yêu cầu: '2 chai nước khoáng và 1 túi gạo cho anh A'..."
-                className="flex-1 bg-white border border-indigo-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-inner"
+                className="text-slate-500 flex-1 bg-white border border-indigo-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-inner"
               />
               <button 
                 //onClick={handleAiParsing}
@@ -367,7 +380,7 @@ export default function POS() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Tìm sản phẩm nhanh theo tên..."
-                className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                className="text-slate-500 w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
               />
             </div>
 
@@ -554,7 +567,7 @@ export default function POS() {
             
             {/* Form thông tin khách hàng nhập nhanh */}
             {!selectedCustomer && (
-              <div className={`p-4 border rounded-2xl space-y-3 animate-in slide-in-from-bottom-2 duration-300 transition-all ${
+              <div className={`p-2 border rounded-2xl space-y-3 animate-in slide-in-from-bottom-2 duration-300 transition-all ${
                 paymentMode === 'DEBT' ? 'bg-rose-50 border-rose-100' : 'bg-indigo-50 border-indigo-100'
               }`}>
                 <p className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-2 ${
@@ -562,7 +575,7 @@ export default function POS() {
                 }`}>
                   <UserPlus size={12} /> {paymentMode === 'DEBT' ? 'Thông tin khách ghi nợ' : 'Thông tin khách hàng'}
                 </p>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <div className="relative">
                     <UserIcon className={`absolute left-3 top-1/2 -translate-y-1/2 ${paymentMode === 'DEBT' ? 'text-rose-300' : 'text-indigo-300'}`} size={14} />
                     <input 
@@ -592,7 +605,7 @@ export default function POS() {
               </div>
             )}
 
-            <div className="space-y-2">
+            <div className="space-y-1">
               <div className="flex justify-between items-center text-slate-500 text-xs">
                 <span>Tạm tính ({cart.length} mặt hàng)</span>
                 <span>{total.toLocaleString()}đ</span>

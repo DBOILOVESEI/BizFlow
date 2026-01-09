@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { Search, Phone, CreditCard } from 'lucide-react'
 import MainLayout from "../../components/MainLayout";
+import { useAuth } from "../../modules/useAuth";
 
 // Dữ liệu mẫu ban đầu
 const initialCustomers = [
@@ -10,7 +11,8 @@ const initialCustomers = [
   { id: 3, name: 'Lê Văn C', phone: '0987654321', debt: 800000 }
 ]
 
-export default function POS() {
+export default function Customers() {
+  const { user, logout } = useAuth();
   const [customers, setCustomers] = useState<any[]>(initialCustomers);
   const [search, setSearch] = useState('');
 
@@ -70,7 +72,7 @@ export default function POS() {
   )
 
   return (
-    <MainLayout title="Quản lí thu nợ">
+    <MainLayout title="Quản lí thu nợ" user={user} logout={logout}>
       <div className="space-y-6">
         {/* Header */}
         <div>

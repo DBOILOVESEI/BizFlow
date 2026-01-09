@@ -15,7 +15,7 @@ def get_staff():
     # jwt để tạo token
     # jwt xử lý token
     # khi nhận request thì jwt sẽ biết là ai từ token
-    # token chứa thông tin về người gửi (check frontend)
+
     
     owner_id = get_jwt_identity()
     employees = get_employees_by_owner_id(owner_id)

@@ -19,3 +19,4 @@ class UserModel(Base):
 
     role_id = Column(Integer, ForeignKey('role.role_id'))
     owner_id = Column(Integer, ForeignKey('user.user_id'), nullable=True)
+    inventory_id = Column(Integer, ForeignKey('inventory.inventory_id'), nullable=True)

@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from infrastructure.databases.engine import session
 from infrastructure.models.user_model import UserModel
 from . import role_repo
+from . import inventory_repo
 
 def get_by_username(username):
     return session.query(UserModel).filter_by(username=username).first()

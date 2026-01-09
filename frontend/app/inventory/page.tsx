@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Package,
   Plus,
@@ -13,14 +13,16 @@ import {
   Layers,
   Trash2,
   AlertCircle,
-  History // Vẫn giữ import History dù không dùng trong code gốc
+  History
 } from 'lucide-react';
 import { useAuth } from "../../modules/useAuth";
+// Giả định các hàm API đã được định nghĩa đúng cách
+import {updateProductOnServer, addProductToServer, deleteProductOnServer} from "../../modules/api/inventory.api"
 import { API_BASE_URL, ENDPOINTS } from '../../modules/api/api.config';
 
 import MainLayout from "../../components/MainLayout";
 
-// Định nghĩa lại Types cơ bản (thay thế import)
+// Định nghĩa lại Types cơ bản
 type UnitOfMeasure = {
   name: string;
   price: number;
@@ -39,26 +41,9 @@ type Product = {
 
 export default function Inventory() {
   const { user, logout } = useAuth();
-  // Dữ liệu mẫu (thay thế props)
-  const [products, setProducts] = useState<Product[]>([
-    {
-      id: 'p1',
-      name: 'Nước Khoáng Lavie',
-      sku: 'NK001',
-      category: 'Đồ uống',
-      baseUnit: 'Chai',
-      stockLevel: 150,
-      minStock: 50,
-      units: [{ name: 'Chai', price: 5000 }],
-    },
-  ]);
-
-  // Hàm giả lập thay thế onUpdateProducts
-  const onUpdateProducts = (updatedProducts: Product[]) => {
-    console.log('Updating products (mock):', updatedProducts);
-    setProducts(updatedProducts);
-  };
-
+  
+  // Dữ liệu sản phẩm
+  const [products, setProducts] = useState<Product[]>([]); 
   const [filter, setFilter] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -71,13 +56,32 @@ export default function Inventory() {
     baseUnit: '',
   });
 
+  // Hàm giả lập thay thế onUpdateProducts
+  const onUpdateProducts = (updatedProducts: Product[]) => {
+    console.log('Updating products (mock):', updatedProducts);
+    setProducts(updatedProducts);
+  };
+
   const onNotify = (notif: { title: string; message: string; type: 'info' | 'success' | 'error' }) => {
     console.log(`Notification (${notif.type}): ${notif.title} - ${notif.message}`);
     alert(`${notif.title}: ${notif.message}`); // Dùng alert để demo
   };
+  
+  // --- LOGIC LỌC SẢN PHẨM MỚI ---
+  // Sử dụng useMemo để tính toán danh sách đã lọc, giúp cải thiện hiệu suất
+  const filteredProducts = useMemo(() => {
+    const filterText = filter.toLowerCase();
+
+    return products.filter(p =>
+      // **ĐIỀU CHỈNH QUAN TRỌNG:** Sử dụng (p.name || "") để tránh lỗi 'undefined'
+      (p.name || "").toLowerCase().includes(filterText) ||
+      (p.category || "").toLowerCase().includes(filterText)
+    );
+  }, [products, filter]);
+  // ------------------------------
 
   const fetchProducts = async () => {
-      // Giả định endpoint API đã được tạo
+      // ... (Phần fetchProducts giữ nguyên, nhưng đã xóa dữ liệu mẫu khỏi useState)
       try {
         if (!user) {
           return null;
@@ -86,7 +90,6 @@ export default function Inventory() {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            // Thêm token Auth nếu cần thiết
             'Authorization': `Bearer ${user.token}`,
           },
         });
@@ -95,102 +98,40 @@ export default function Inventory() {
           throw new Error('Không thể tải danh sách sản phẩm');
         }
   
-        // Mô phỏng dữ liệu trả về từ server (thay thế bằng response.json() thực tế)
         const data = await response.json(); 
         const products_data = data.products_data
   
         console.log(data.msg);
   
-        // Nếu không gọi được API, dùng dữ liệu mẫu thay thế để test UI
-        if (products_data.length === 0) {
-          // Dữ liệu mẫu thay thế (Nếu API fail/chưa setup)
-          const sampleData: Product[] = [
-            {
-              id: 'p1',
-              name: 'Nước Khoáng Lavie 400ml',
-              sku: 'NK001',
-              category: 'Đồ uống',
-              baseUnit: 'Chai',
-              stockLevel: 150,
-              minStock: 50,
-              units: [
-                { name: 'Chai', price: 5000 }
-              ],
-            }
-          ];
-
-          onNotify({ title: 'Cảnh báo', message: 'Dùng dữ liệu mẫu do không thể kết nối Inventory API.', type: 'info' });
-          setProducts(sampleData);
-        } else {
+        if (products_data && products_data.length > 0) {
           setProducts(products_data);
+        } else {
+          onNotify({ title: 'Thông báo', message: 'Không có dữ liệu sản phẩm, vui lòng thêm mới.', type: 'info' });
+          // Thêm dữ liệu mẫu nếu cần thiết cho demo/test
+          setProducts([]); 
         }
   
       } catch (error: any) {
         console.error('Error fetching products:', error);
         onNotify({ title: 'Lỗi API', message: error.message || 'Không thể tải dữ liệu sản phẩm.', type: 'error' });
-        // Thêm data mẫu dự phòng
-        const sampleData: Product[] = [
+        // Set dữ liệu mẫu để tránh lỗi UI nếu API thất bại
+        setProducts([
           {
             id: 'p1',
             name: 'Nước Khoáng Lavie 500ml',
             sku: 'NK001',
             category: 'Đồ uống',
             baseUnit: 'Chai',
-            stockLevel: 1500000,
+            stockLevel: 150,
             minStock: 50,
             units: [
               { name: 'Chai', price: 5000 }
             ],
           },
-          {
-            id: 'p2',
-            name: 'Gạo Tẻ Thơm ST25 (5kg)',
-            sku: 'GT002',
-            category: 'Thực phẩm',
-            baseUnit: 'Bao(5kg)',
-            stockLevel: 80,
-            minStock: 20,
-            units: [
-              { name: 'Bao(5kg)', price: 120000 }
-            ],
-          },
-          {
-            id: 'p3',
-            name: 'Mì Tôm Hảo Hảo (Thùng)',
-            sku: 'MT003',
-            category: 'Thực phẩm',
-            baseUnit: 'Gói',
-            stockLevel: 30,
-            minStock: 10,
-            units: [
-              { name: 'Thùng(30)', price: 150000 },
-              { name: 'Gói', price: 5000 },
-            ],
-          },
-          {
-            id: 'p4',
-            name: 'Sữa Tươi Vinamilk 1L',
-            sku: 'ST004',
-            category: 'Đồ uống',
-            baseUnit: 'Hộp',
-            stockLevel: 220,
-            minStock: 100,
-            units: [
-              { name: 'Hộp', price: 35000 },
-              { name: 'Thùng(12)', price: 380000 },
-            ],
-          },
-        ];
-
-        setProducts(sampleData);
+        ]);
       }
     };
-
-  const filtered = products.filter(p =>
-    p.name.toLowerCase().includes(filter.toLowerCase()) ||
-    p.category.toLowerCase().includes(filter.toLowerCase())
-  );
-
+    
   const resetForm = () => {
     setFormData({ name: '', category: '', price: '', stockLevel: '', baseUnit: '' });
     setEditingProduct(null);
@@ -199,14 +140,12 @@ export default function Inventory() {
 
   const handleOpenAdd = () => {
     setEditingProduct(null);
-    // Thiết lập giá trị mặc định cho form thêm
     setFormData({ name: '', category: '', price: '', stockLevel: '0', baseUnit: 'Cái' });
     setShowModal(true);
   };
 
   const handleOpenEdit = (product: Product) => {
     setEditingProduct(product);
-    // Lưu ý: Code gốc chỉ lấy đơn vị đầu tiên (units[0])
     setFormData({
       name: product.name,
       category: product.category,
@@ -217,56 +156,105 @@ export default function Inventory() {
     setShowModal(true);
   };
 
-  const handleDeleteProduct = (id: string) => {
-    if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này khỏi kho hàng?')) {
-      onUpdateProducts(products.filter(p => p.id !== id));
-      alert('Đã xóa sản phẩm thành công (Demo).');
+  const handleDeleteProduct = async (id: string) => { // Thêm 'async' để dùng 'await'
+    if (!user) {
+        onNotify({ title: 'Lỗi', message: 'Bạn chưa đăng nhập.', type: 'error' });
+        return;
     }
-  };
+    
+    if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này khỏi kho hàng? (Thao tác này là Xóa mềm)')) {
+        try {
+            // 1. Gọi API XÓA (Soft Delete)
+            await deleteProductOnServer(user, id); // Thay bằng hàm API thật của bạn
+            
+            // 2. Cập nhật state (Xóa sản phẩm khỏi danh sách local)
+            const updatedProducts = products.filter(p => p.id !== id);
+            onUpdateProducts(updatedProducts);
+            
+            // 3. Thông báo thành công
+            onNotify({ title: 'Thành công', message: 'Đã xóa sản phẩm thành công.', type: 'success' });
+            
+        } catch (error) {
+            console.error("Lỗi khi xóa sản phẩm:", error);
+            // 4. Thông báo lỗi nếu API thất bại
+            onNotify({ title: 'Lỗi', message: 'Không thể xóa sản phẩm. Vui lòng thử lại.', type: 'error' });
+        }
+    }
+};
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.price || !formData.baseUnit) return;
 
-    if (editingProduct) {
-      // Cập nhật sản phẩm cũ
-      const updatedProducts = products.map(p => {
-        if (p.id === editingProduct.id) {
-          return {
-            ...p,
-            name: formData.name,
+    const dataToSend = {
+            product_id: "",
+            name: formData.name || "Unamed product",
             category: formData.category || 'Chưa phân loại',
             baseUnit: formData.baseUnit,
             stockLevel: parseInt(formData.stockLevel) || 0,
-            units: [
-              { ...p.units[0], name: formData.baseUnit, price: parseInt(formData.price) || 0 }
-            ]
-          };
-        }
-        return p;
-      });
-      onUpdateProducts(updatedProducts);
-      alert(`Đã cập nhật sản phẩm "${formData.name}" (Demo).`);
-    } else {
-      // Thêm sản phẩm mới
-      const productToAdd: Product = {
-        id: `p-${Date.now()}`,
-        name: formData.name,
-        sku: `PROD-${Math.random().toString(36).substr(2, 4).toUpperCase()}`,
-        category: formData.category || 'Chưa phân loại',
-        baseUnit: formData.baseUnit,
-        stockLevel: parseInt(formData.stockLevel) || 0,
-        minStock: 10,
-        units: [
-          { name: formData.baseUnit, price: parseInt(formData.price) || 0 }
-        ]
-      };
-      onUpdateProducts([productToAdd, ...products]);
-      alert(`Đã thêm sản phẩm "${formData.name}" mới (Demo).`);
+            price: parseInt(formData.price) || 0, // Giá cơ sở
+    };
+    if (editingProduct) {
+      dataToSend.product_id = editingProduct.id
     }
+     try {
+        if (!user) return null;
+        if (editingProduct) {
+          // sp gửi đi
+          // Cập nhật sản phẩm cũ
+          await updateProductOnServer(user, [dataToSend]);
+          const updatedProducts = products.map(p => {
+          if (p.id === editingProduct.id) {
+            return {
+            ...p,
+            ...dataToSend, // Cập nhật các trường từ dataToSend
+            units: [{ ...p.units[0], name: dataToSend.baseUnit, price: dataToSend.price }]
+            };
+          }
 
-    resetForm();
-  };
+          return p;
+
+          });
+
+          onUpdateProducts(updatedProducts);
+
+          alert(`Đã cập nhật sản phẩm "${formData.name}" thành công.`);
+
+        } else {
+
+        // Thêm sản phẩm mới
+
+        const newProductFromServer = await addProductToServer(user, dataToSend);
+
+        // Logic cập nhật state sau khi gọi API thành công
+        // API thường trả về ID và SKU mới được tạo
+
+        const productToAdd: Product = {
+        ...newProductFromServer, // Dùng dữ liệu trả về từ server (có ID, SKU thật)
+        // Fallback nếu server không trả về đủ
+        id: newProductFromServer.product_id || `p-${Date.now()}`,
+        sku: newProductFromServer.sku || `PROD-${Math.random().toString(36).substr(2, 4).toUpperCase()}`,
+        minStock: 10, // Hoặc lấy từ server
+        units: [
+        { name: dataToSend.baseUnit, price: dataToSend.price }
+
+        ]
+
+        };
+
+        onUpdateProducts([productToAdd, ...products]);
+
+        alert(`Đã thêm sản phẩm "${formData.name}" mới thành công.`);
+
+        } 
+
+        resetForm();
+
+        } catch (error: any) {
+          console.error('Lỗi khi gửi dữ liệu sản phẩm:', error);
+          onNotify({ title: 'Lỗi', message: `Không thể ${editingProduct ? 'cập nhật' : 'thêm mới'} sản phẩm: ${error.message || 'Lỗi không xác định'}`, type: 'error' });
+        }
+      };
 
   useEffect(() => {
       if (user) {
@@ -320,7 +308,8 @@ export default function Inventory() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filtered.map(p => (
+              {/* SỬ DỤNG filteredProducts THAY VÌ filtered */}
+              {filteredProducts.map(p => ( 
                 <tr key={p.id} className="hover:bg-slate-50 transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -328,7 +317,8 @@ export default function Inventory() {
                         <Package size={20} />
                       </div>
                       <div>
-                        <p className="font-semibold text-sm text-slate-900">{p.name}</p>
+                        {/* Đảm bảo tên sản phẩm hiển thị an toàn */}
+                        <p className="font-semibold text-sm text-slate-900">{p.name || 'Sản phẩm chưa đặt tên'}</p> 
                       </div>
                     </div>
                   </td>
@@ -373,7 +363,8 @@ export default function Inventory() {
                   </td>
                 </tr>
               ))}
-              {filtered.length === 0 && (
+              {/* SỬ DỤNG filteredProducts THAY VÌ filtered */}
+              {filteredProducts.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
                     <div className="flex flex-col items-center gap-2">
@@ -387,7 +378,7 @@ export default function Inventory() {
           </table>
         </div>
       </div>
-
+      
       {/* Product Form Modal (Add/Edit) */}
       {showModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-6">

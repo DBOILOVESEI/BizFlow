@@ -9,6 +9,7 @@ from infrastructure.databases.engine import session
 
 from repositories import user_repo
 from repositories import role_repo
+from repositories import inventory_repo
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/')
 
@@ -64,52 +65,74 @@ def login():
 def signup():
     data = request.get_json()
 
-    required_fields = ["username", "password", "role"] # email required if user = owner
+    required_fields = ["username", "password", "role"]
     if not data or not all(field in data for field in required_fields):
         return jsonify({"msg": "Invalid input"}), 400
 
     username = data["username"].strip()
     password = data["password"]
     role = data["role"].strip().upper()
-    
+
     email = None
     inviteCode = None
     owner_id = None
-    existingOwner = None
+
+    # check role
     if role == "OWNER":
-        if "email" not in data or not data["email"]:
+        if not data.get("email"):
             return jsonify({"msg": "Email is required for owner"}), 400
         email = data["email"].strip().lower()
+
     elif role == "EMPLOYEE":
-        if "inviteCode" not in data or not data["inviteCode"]:
+        if not data.get("inviteCode"):
             return jsonify({"msg": "Invite code is required for employee"}), 400
+
         inviteCode = data["inviteCode"].strip()
         owner_id = int(inviteCode)
 
         existingOwner = user_repo.get_by_id(owner_id)
         if not existingOwner:
-            return jsonify({"msg": "Owner doesn't exist. Please check your invite code again"}), 404
-        
+            return jsonify({
+                "msg": "Owner doesn't exist. Please check your invite code again"
+            }), 404
+    else:
+        return jsonify({"msg": "Invalid role"}), 400
+
+    # check dupe user
     existing_user = user_repo.user_exists(
         username=username,
-        email=email if role == "OWNER" else None # send email if user = owner
+        email=email if role == "OWNER" else None
     )
     if existing_user:
         return jsonify({"msg": "User already exists"}), 409
 
+    # role id
     role_id = role_repo.get_role_id_by_name(role)
     if not role_id:
         return jsonify({"msg": "Role doesn't exist"}), 400
 
-
+    # create user
     password_hash = bcrypt.generate_password_hash(password).decode("utf-8")
-    owner_id = owner_id if role == "EMPLOYEE" else None
 
-    user_created = user_repo.create_user(username, password_hash, email, role_id, owner_id)
+    user_created = user_repo.create_user(
+        username, 
+        password_hash, 
+        email, 
+        role_id,
+        owner_id if role == "EMPLOYEE" else None
+    )
+
     if not user_created:
         return jsonify({"msg": "Database error"}), 500
 
+    # create inventory for owner
+    if role == "OWNER":
+        inventory_created = inventory_repo.create_inventory(user_created.user_id)
+        if not inventory_created:
+            return jsonify({"msg": "Failed to create inventory"}), 500
+
     return jsonify({"msg": "Signup successful"}), 201
+
 
 @auth_bp.route("/auth", methods=['GET'])
 @role_required("OWNER", "EMPLOYEE")
