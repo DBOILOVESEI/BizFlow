@@ -26,14 +26,17 @@ import {
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import MainLayout from "../../components/MainLayout";  
+import { useAuth } from "../../modules/useAuth";
 
 type AdminTab = 'owners' | 'analytics' | 'config';
 
 export default function AdminPanel() {
+  const { user, logout } = useAuth();
+  
   const [activeTab, setActiveTab] = useState<AdminTab>('owners');
 
   return (
-    <MainLayout title="Quản lý hệ thống">
+    <MainLayout title="Quản lý hệ thống" user={user} logout={logout}>
     <div className="flex flex-col h-full gap-8">
       {/* Header tập trung */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-6 rounded-4xl border border-slate-200 shadow-sm">

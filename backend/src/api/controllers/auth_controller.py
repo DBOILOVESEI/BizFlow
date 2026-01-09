@@ -135,7 +135,7 @@ def signup():
 
 
 @auth_bp.route("/auth", methods=['GET'])
-@role_required("OWNER", "EMPLOYEE")
+@role_required("OWNER", "EMPLOYEE", "ADMIN")
 def get_user_profile():
     user_id = get_jwt_identity()
     claims = get_jwt()

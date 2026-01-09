@@ -67,6 +67,8 @@ export default function Login() {
           router.push(ENDPOINTS.DASHBOARD)
         } else if (loggedInUser.role === 'EMPLOYEE') {
           router.push(ENDPOINTS.POS)
+        } else if (loggedInUser.role === 'ADMIN') {
+          router.push(ENDPOINTS.ADMIN)
         }
 
         
