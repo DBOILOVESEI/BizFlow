@@ -11,8 +11,11 @@ from infrastructure.models.customer_debt_model import CustomerDebtModel
 
 
 def get_all_products(inventory_id: int):
-    """Lấy danh sách sản phẩm để hiển thị inventory"""
-    return session.query(ProductModel).filter(inventory_id==inventory_id, ProductModel.is_active == True).all()
+    """Lấy danh sách sản phẩm theo đúng kho hàng của chủ sở hữu"""
+    return session.query(ProductModel).filter(
+        ProductModel.inventory_id == inventory_id, # Phải dùng ProductModel.inventory_id
+        ProductModel.is_active == True
+    ).all()
 
 def get_product_by_id(product_id: int):
     """Tìm sản phẩm theo ID"""
