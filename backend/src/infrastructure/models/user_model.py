@@ -9,7 +9,7 @@ class UserModel(Base):
     username = Column(String(50), nullable = True)
     password_hash = Column(String(255), nullable = True)
     full_name = Column(String(100), nullable=True)
-    email = Column(String(100), nullable=False)
+    email = Column(String(100), nullable=True)
     phone = Column(String(20), nullable=True)
     is_active = Column(Boolean, nullable=True)
     created_at = Column(DateTime)
@@ -18,4 +18,5 @@ class UserModel(Base):
     created_by = Column(Integer, nullable=False)
 
     role_id = Column(Integer, ForeignKey('role.role_id'))
-    owner_id = Column(Integer, ForeignKey('user.user_id'))
+    owner_id = Column(Integer, ForeignKey('user.user_id'), nullable=True)
+    inventory_id = Column(Integer, ForeignKey('inventory.inventory_id'), nullable=True)

@@ -1,20 +1,58 @@
+from datetime import datetime, timedelta
+
 # repositories/user_repo.py
-from infrastructure.databases.session import db_session
-from infrastructure.databases.models.user import UserModel
+from infrastructure.databases.engine import session
+from infrastructure.models.user_model import UserModel
+from . import role_repo
+from . import inventory_repo
 
 def get_by_username(username):
-    return db_session.query(UserModel).filter_by(username=username).first()
+    return session.query(UserModel).filter_by(username=username).first()
 
 def get_by_email(email):
-    return db_session.query(UserModel).filter_by(email=email).first()
+    return session.query(UserModel).filter_by(email=email).first()
 
-def create_user(username, email, password_hash, role="employee"):
-    user = UserModel(
+def get_by_id(user_id):
+    return session.query(UserModel).filter_by(user_id=user_id).first()
+
+def user_exists(username: str, email: str | None = None):
+    # username exists?
+    user = session.query(UserModel).filter_by(username=username).first()
+    if user:
+        return user
+
+    if email!=None:
+        # username not taken. email exists?
+        return session.query(UserModel).filter_by(email=email).first()
+    
+def create_user(username, password_hash, email, role_id, owner_id):
+    new_user = UserModel(
         username=username,
-        email=email,
         password_hash=password_hash,
-        role=role
+        email=email,
+        role_id=role_id,
+        is_active=True,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
+        created_by=0,
+        owner_id = owner_id
     )
-    db_session.add(user)
-    db_session.commit()
-    return user
+    try:
+        session.add(new_user)
+        session.commit()
+        return new_user
+
+    except InterruptedError:
+        session.rollback()
+        return None
+
+def get_employees_by_owner_id(owner_id: int):
+    employee_role_id = role_repo.get_role_id_by_name("EMPLOYEE")
+
+    if not employee_role_id:
+        return []
+    
+    return session.query(UserModel).filter(
+        UserModel.owner_id == owner_id,
+        UserModel.role_id == employee_role_id
+    ).all()

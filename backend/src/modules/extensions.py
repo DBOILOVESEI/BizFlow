@@ -4,4 +4,4 @@ from flask_cors import CORS
 
 bcrypt = Bcrypt()
 jwt = JWTManager()
-cors = CORS() # FLUTTER
+cors = CORS()

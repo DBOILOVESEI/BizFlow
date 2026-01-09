@@ -10,5 +10,3 @@ class RoleModel(Base):
 
     role_id = Column(Integer, primary_key=True)
     role_name = Column(Text, nullable=False)
-
-    users = relationship("User", back_populates="role")
