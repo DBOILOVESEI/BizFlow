@@ -8,8 +8,13 @@ class ReportTemplateModel(Base):
     template_id = Column(Integer, primary_key=True)
     template_name = Column(String(200), nullable=True)
     template_code = Column(String(50), nullable=True)
+<<<<<<< HEAD
     template_type = Column(Enum('REVENUE', 'DEBT', 'INVENTORY', 'BUSINESS_OPERATION'), nullable=False)
     calculation_reference = Column(String(100), nullable=True)
+=======
+    template_type = Column(Enum('REVENUE', 'DEBT', 'INVENTORY', 'BUSINESS_OPERATION', name="ReportTemplateTypeEnum"), nullable=False)
+    carculation_reference = Column(String(100), nullable=True)
+>>>>>>> f39ae2140416c6d2bf1de88a8fbba34eb5b56f16
     version = Column(String(20), nullable=True)
     is_active = Column(Boolean, nullable=True)
     template_structure = Column(JSON, nullable=True)

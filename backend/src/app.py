@@ -1,11 +1,19 @@
 from flask import Flask, jsonify
 from modules.extensions import bcrypt, jwt, cors
 from infrastructure import databases
-from routes import auth_bp
-from routes import admin_bp
+
+# BLUEPRINTS
+from api.controllers.auth_controller import auth_bp
+from api.controllers.orders import orders_bp
+from api.controllers.staff import employee_bp
+#from routes import auth_bp
+#from routes import admin_bp
+
+from repositories import role_repo
+role_repo.create_roles()
 
 app = Flask(__name__)
-app.config["JWT_SECRET_KEY"] = "super-secret-key"
+app.config["SECRET_KEY"] = "super-secret-key"
 
 bcrypt.init_app(app)
 jwt.init_app(app)
@@ -13,7 +21,8 @@ cors.init_app(app)
 
 # Register blueprints
 app.register_blueprint(auth_bp)
-app.register_blueprint(admin_bp)
+app.register_blueprint(orders_bp)
+app.register_blueprint(employee_bp)
 
 @app.route("/", methods=["GET"])
 def health_check():

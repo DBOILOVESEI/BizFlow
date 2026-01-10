@@ -5,7 +5,11 @@ class AuditLogModel(Base):
     __tablename__ = 'audit_log'
     __table_args__ = {'extend_existing': True} 
 
+<<<<<<< HEAD
     log_id = Column(Integer, primary_key=True)    
+=======
+    log_id = Column(Integer, primary_key=True)
+>>>>>>> f39ae2140416c6d2bf1de88a8fbba34eb5b56f16
     user_id = Column(Integer, ForeignKey('user.user_id'))
     business_id = Column(Integer, ForeignKey('business.business_id'))
     action_type = Column(String(100), nullable=True)

@@ -6,9 +6,9 @@ class ProductModel(Base):
     __table_args__ = {'extend_existing': True} 
 
     product_id = Column(Integer, primary_key=True)
-    business_id = Column(Integer, ForeignKey('business.business_id'))
-    category_id = Column(Integer, ForeignKey('category.category_id'))
+    inventory_id = Column(Integer, ForeignKey('inventory.inventory_id'))
     product_code = Column(String(50), nullable=False)
+    category_name = Column(String(50), nullable=False)
     product_name = Column(String(200), nullable=True)
     description = Column(Text, nullable=True)
     base_unit = Column(String(50), nullable=False)
@@ -20,3 +20,4 @@ class ProductModel(Base):
     low_stock_threshold = Column(Integer, nullable=False)
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
+    
