@@ -13,12 +13,6 @@ class CustomerDebtModel(Base):
     remaining_amount = Column(DECIMAL(15,2), nullable=False)
     debt_date = Column(DateTime, nullable=True)
     due_date = Column(DateTime, nullable=True)
-<<<<<<< HEAD
     status = Column(Enum('UNPAID', 'PARTIAL', 'PAID', 'OVERDUE'), nullable=False)
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
-=======
-    status = Column(Enum('UNPAID', 'PARTIAL', 'PAID', 'OVERDUE', name="CustomerDebtStatusEnum"), nullable=False)
-    crated_at = Column(DateTime)
-    updated_at =Column(DateTime)
->>>>>>> ebc731bb4bf838b748d526476803a32a9e68a6b1
