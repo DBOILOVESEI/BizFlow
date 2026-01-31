@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from services.customer_debt_service import CustomerDebtService
-from infrastructure.repositories.customer_debt_repository import CustomerDebtRepository
+from repositories.customer_debt_repository import CustomerDebtRepository
 from api.schemas.customer_debt import CustomerDebtRequestSchema, CustomerDebtResponseSchema
 from datetime import datetime
 from infrastructure.databases.engine import session

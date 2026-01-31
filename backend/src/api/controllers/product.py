@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from services.product_service import ProductService
-from infrastructure.repositories.product_repository import ProductRepository
+from repositories.product_repository import ProductRepository
 from api.schemas.product import ProductRequestSchema, ProductResponseSchema
 from datetime import datetime
 from infrastructure.databases.engine import session
