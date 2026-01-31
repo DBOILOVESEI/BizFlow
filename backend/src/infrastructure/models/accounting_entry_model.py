@@ -8,20 +8,7 @@ class AccountingEntryModel(Base):
     entry_id = Column(Integer, primary_key=True)
     business_id = Column(Integer, ForeignKey('business.business_id'))
     entry_date = Column(DateTime)
-<<<<<<< HEAD
-    entry_type = Column(
-        Enum(
-            'REVENUE',
-            'PURCHASE',
-            'DEBT_PAYMENT',
-            'ADJUSTMENT',
-            name='entry_type_enum'
-        ),
-        nullable=False
-    )
-=======
     entry_type = Column(Enum('REVENUE', 'PURCHASE', 'DEBT_PAYMENT', 'ADJUSTMENT', name="AccountingEntryTypeEnum"), nullable=False)
->>>>>>> f39ae2140416c6d2bf1de88a8fbba34eb5b56f16
     reference_type = Column(String(50), nullable=True)
     reference_id = Column(Integer, nullable=True)
     description = Column(Text, nullable=True)

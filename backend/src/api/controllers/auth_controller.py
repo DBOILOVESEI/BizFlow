@@ -16,20 +16,6 @@ auth_bp = Blueprint('auth', __name__, url_prefix='/')
 @auth_bp.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
-<<<<<<< HEAD
-    user = session.query(UserModel).filter_by(
-        user_name=data['user_name'],
-        password=data['password_hash'],
-        role=data['role']
-    ).first()
-    if not user:
-        return jsonify({'error': 'Invalid credentials'}), 401
-
-    payload =  {'sub': str(user.user_id),
-               'role': user.role,
-                'iat': datetime.utcnow(),
-                'exp': datetime.utcnow() + timedelta(hours=2)}
-=======
     email = data.get("username") 
     password = data.get("password")
 
@@ -50,7 +36,6 @@ def login():
     except ValueError:
         # hash error
         return jsonify({'msg': 'Server configuration error in password handling'}), 500
->>>>>>> f39ae2140416c6d2bf1de88a8fbba34eb5b56f16
 
     token = create_access_token(
         identity=str(users.user_id),
