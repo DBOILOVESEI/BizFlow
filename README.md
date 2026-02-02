@@ -10,7 +10,7 @@ official PostgreSQL website. Run the installer, accept default components (Serve
 
 2. Change URL in engine.py (/backend/src/infrastructure/databases/engine.py)</br>
 DATABASE_URL = "postgresql+psycopg2://postgres:123456@localhost:5432/bizflow_dev"</br>
-Change postgres:123456 to yourPostgresUsername:Password</br>
+Create a new database called "bizflow_dev" (or whatever name you want) and change postgres:123456 to yourPostgresUsername:Password</br>
 (Don't use localhost in deployment.)
 
 3. Locate to backend folder and create virtual environment</br>
