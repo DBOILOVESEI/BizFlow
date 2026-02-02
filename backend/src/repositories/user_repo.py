@@ -56,3 +56,10 @@ def get_employees_by_owner_id(owner_id: int):
         UserModel.owner_id == owner_id,
         UserModel.role_id == employee_role_id
     ).all()
+
+def get_owners():
+    owner_role_id = role_repo.get_role_id_by_name("OWNER")
+    if not owner_role_id:
+        return []
+        
+    return session.query(UserModel).filter(UserModel.role_id == owner_role_id).all()
