@@ -15,13 +15,13 @@ role_repo.create_roles()
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "super-secret-key"
-app.register_blueprint(dashboard_bp,)
 
 bcrypt.init_app(app)
 jwt.init_app(app)
 cors.init_app(app)
 
 # Register blueprints
+app.register_blueprint(dashboard_bp,)
 app.register_blueprint(auth_bp)
 app.register_blueprint(orders_bp)
 app.register_blueprint(employee_bp)
