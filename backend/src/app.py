@@ -1,6 +1,7 @@
 from flask import Flask, jsonify
 from modules.extensions import bcrypt, jwt, cors
 from infrastructure import databases
+from api.controllers.dashboard import dashboard_bp
 
 # BLUEPRINTS
 from api.controllers.auth_controller import auth_bp
@@ -14,6 +15,7 @@ role_repo.create_roles()
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "super-secret-key"
+app.register_blueprint(dashboard_bp,)
 
 bcrypt.init_app(app)
 jwt.init_app(app)
