@@ -1,90 +1,146 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
-  Shield, 
-  Users, 
-  BarChart3, 
-  Settings, 
-  LayoutTemplate,
-  Search,
-  Save,
-  Building,
-  Mail,
-  Smartphone,
-  Calendar,
-  Zap,
-  FileText,
-  Printer,
-  X,
-  Lock,
-  Eye,
-  EyeOff,
-  Hash,
-  User as UserIcon,
-  CheckCircle2
+  Shield, Users, BarChart3, Settings, LayoutTemplate, Search, 
+  Save, Mail, Smartphone, Calendar, Lock, Eye, EyeOff, Hash, 
+  User as UserIcon, CheckCircle2, X, FileText, Printer, Loader2
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { API_BASE_URL, ENDPOINTS } from '../../modules/api/api.config';
+
 import MainLayout from "../../components/MainLayout";  
 import { useAuth } from "../../modules/useAuth";
 
 type AdminTab = 'owners' | 'analytics' | 'config';
 
+type Owner = {
+  id: string;
+  username: string;
+  email: string;
+  phone: string;
+  plan: string;
+  joined: string;
+  password?: string;
+}
+
 export default function AdminPanel() {
   const { user, logout } = useAuth();
-  
   const [activeTab, setActiveTab] = useState<AdminTab>('owners');
+  
+  // Data State
+  const [owners, setOwners] = useState<Owner[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Reusable fetch function
+  const fetchOwners = useCallback(async () => {
+    if (!user?.token) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}${ENDPOINTS.ADMIN_OWNERS}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user.token}`,
+        },
+      });
+
+      if (!response.ok) throw new Error('Không thể tải danh sách từ máy chủ');
+
+      const data = await response.json();
+      // Adjusting based on your server's expected output format
+      const owners = data.owners || [];
+      
+      if (owners.length === 0) {
+        // Fallback for demo if DB is empty
+        setOwners([
+          { id: '1', email: 'owner_a@gmail.com', phone: '0901234567', plan: 'Doanh nghiệp', joined: '2024-01-15', username: 'owner_a'},
+        ]);
+      } else {
+        // Map server keys to local state keys if they differ
+        setOwners(owners);
+      }
+    } catch (error: any) {
+      console.error('Error fetching:', error);
+      // alert('Lỗi kết nối: Sử dụng dữ liệu tạm thời.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user?.token]);
+
+  // Initial load
+  useEffect(() => {
+    fetchOwners();
+  }, [fetchOwners]);
 
   return (
     <MainLayout title="Quản lý hệ thống" user={user} logout={logout}>
-    <div className="flex flex-col h-full gap-8">
-      {/* Header tập trung */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-6 rounded-4xl border border-slate-200 shadow-sm">
-        <div>
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight">Cổng Quản trị Hệ thống</h2>
-          <p className="text-slate-500 font-medium">Giám sát và cấu hình toàn bộ nền tảng BizFlow.</p>
+      <div className="flex flex-col h-full gap-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-6 rounded-4xl border border-slate-200 shadow-sm">
+          <div>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Cổng Quản trị</h2>
+            <p className="text-slate-500 font-medium">Giám sát toàn bộ nền tảng BizFlow.</p>
+          </div>
+          <div className="flex bg-slate-100 p-1.5 rounded-2xl">
+            <TabButton active={activeTab === 'owners'} onClick={() => setActiveTab('owners')} icon={<Users size={18} />} label="Chủ sở hữu" />
+            <TabButton active={activeTab === 'analytics'} onClick={() => setActiveTab('analytics')} icon={<BarChart3 size={18} />} label="Phân tích" />
+            <TabButton active={activeTab === 'config'} onClick={() => setActiveTab('config')} icon={<Settings size={18} />} label="Cấu hình" />
+          </div>
         </div>
-        <div className="flex bg-slate-100 p-1.5 rounded-2xl">
-          <TabButton active={activeTab === 'owners'} onClick={() => setActiveTab('owners')} icon={<Users size={18} />} label="Chủ sở hữu" />
-          <TabButton active={activeTab === 'analytics'} onClick={() => setActiveTab('analytics')} icon={<BarChart3 size={18} />} label="Phân tích Hệ thống" />
-          <TabButton active={activeTab === 'config'} onClick={() => setActiveTab('config')} icon={<Settings size={18} />} label="Cấu hình & Biểu mẫu" />
-        </div>
-      </div>
 
-      {/* Content Area */}
-      <div className="flex-1 min-h-0 overflow-y-auto pr-2 custom-scrollbar pb-10">
-        {activeTab === 'owners' && <OwnersManagement />}
-        {activeTab === 'analytics' && <SystemAnalytics />}
-        {activeTab === 'config' && <SystemConfigAndTemplates />}
+        <div className="flex-1 min-h-0 overflow-y-auto pr-2 custom-scrollbar pb-10">
+          {activeTab === 'owners' && (
+            <OwnersManagement 
+              owners={owners} 
+              setOwners={setOwners} 
+              isLoading={isLoading} 
+              refreshData={fetchOwners} 
+            />
+          )}
+          {activeTab === 'analytics' && <SystemAnalytics />}
+          {activeTab === 'config' && <SystemConfigAndTemplates />}
+        </div>
       </div>
-    </div>
     </MainLayout>
   );
-};
+}
 
-function OwnersManagement() {
+// --- Sub-components with Props ---
+
+function OwnersManagement({ owners, setOwners, isLoading, refreshData }: { 
+  owners: Owner[], 
+  setOwners: React.Dispatch<React.SetStateAction<Owner[]>>,
+  isLoading: boolean,
+  refreshData: () => void 
+}) {
   const [search, setSearch] = useState('');
-  const [editingOwner, setEditingOwner] = useState<any>(null);
+  const [editingOwner, setEditingOwner] = useState<Owner | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
-  const [owners, setOwners] = useState([
-    { id: '1', name: 'Nguyễn Văn A', email: 'owner_a@gmail.com', phone: '0901234567', store: 'Gara Ô tô A', plan: 'Doanh nghiệp', joined: '2024-01-15', username: 'owner_a', businessCode: 'BIZ-001', password: 'password123' },
-    { id: '2', name: 'Trần Thị B', email: 'owner_b@gmail.com', phone: '0902345678', store: 'Tiệm cà phê B', plan: 'Chuyên nghiệp', joined: '2024-02-10', username: 'owner_b', businessCode: 'BIZ-002', password: 'password123' },
-    { id: '3', name: 'Lê Văn C', email: 'owner_c@gmail.com', phone: '0903456789', store: 'Cửa hàng Bán lẻ C', plan: 'Doanh nghiệp', joined: '2024-03-01', username: 'owner_c', businessCode: 'BIZ-003', password: 'password123' },
-    { id: '4', name: 'Phạm Văn D', email: 'owner_d@gmail.com', phone: '0904567890', store: 'Hóa chất D', plan: 'Cơ bản', joined: '2023-11-20', username: 'owner_d', businessCode: 'BIZ-004', password: 'password123' },
-  ]);
-
   const filtered = owners.filter(o => 
-    o.name.toLowerCase().includes(search.toLowerCase()) || 
-    o.store.toLowerCase().includes(search.toLowerCase())
+    o.username.toLowerCase().includes(search.toLowerCase()) ||
+    o.email.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleUpdateOwner = (e: React.FormEvent) => {
+  const handleUpdateOwner = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!editingOwner) return;
+
+    // Logic for API PUT request would go here
     setOwners(prev => prev.map(o => o.id === editingOwner.id ? editingOwner : o));
-    alert(`Đã cập nhật thông tin thành công cho ${editingOwner.name}`);
+    alert(`Đã cập nhật: ${editingOwner.username}`);
     setEditingOwner(null);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-slate-400">
+        <Loader2 className="animate-spin mb-4" size={40} />
+        <p className="font-bold">Đang tải dữ liệu hệ thống...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -95,9 +151,9 @@ function OwnersManagement() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl shadow-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-            placeholder="Tìm theo tên chủ sở hữu hoặc cửa hàng..."
+            placeholder="Tìm theo tên hoặc email..."
           />
-        </div>
+        </div> 
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -106,147 +162,90 @@ function OwnersManagement() {
             <div className="flex justify-between items-start mb-6">
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center text-indigo-600 font-black text-xl border border-slate-200 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                  {o.name.charAt(0)}
+                  {o.username.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <h4 className="font-black text-slate-900 text-lg">{o.name}</h4>
-                  <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
-                    <Building size={12} /> {o.store}
-                  </div>
+                  <h4 className="font-black text-slate-900 text-lg">{o.username}</h4>
+                  <span className="text-[10px] px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-full font-bold uppercase tracking-wider">{o.plan}</span>
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="flex items-center gap-2 text-sm text-slate-500 font-medium overflow-hidden">
-                <Mail size={14} className="text-slate-300 shrink-0" /> <span className="truncate">{o.email}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
-                <Smartphone size={14} className="text-slate-300 shrink-0" /> {o.phone}
-              </div>
-              <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
-                <Calendar size={14} className="text-slate-300 shrink-0" /> {o.joined}
-              </div>
-              <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
-                <Hash size={14} className="text-indigo-400 shrink-0" /> {o.businessCode}
-              </div>
+              <InfoItem icon={<Mail size={14} />} text={o.email} />
+              <InfoItem icon={<Smartphone size={14} />} text={o.phone} />
+              <InfoItem icon={<Calendar size={14} />} text={o.joined} />
+              <InfoItem icon={<Hash size={14} />} text={o.id || 'N/A'} />
             </div>
 
-            <div className="pt-6 border-t border-slate-100">
-              <button 
-                onClick={() => setEditingOwner({ ...o })}
-                className="w-full bg-indigo-600 text-white py-3 rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-100"
-              >
-                <Settings size={18} /> Quản lý thông tin
-              </button>
-            </div>
+            <button 
+              onClick={() => setEditingOwner({ ...o, password: '' })}
+              className="w-full bg-indigo-600 text-white py-3 rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
+            >
+              <Settings size={18} /> Quản lý tài khoản
+            </button>
           </div>
         ))}
       </div>
 
-      {/* Modal Quản lý thông tin */}
+      {/* Edit Modal */}
       {editingOwner && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
           <div className="bg-white rounded-[2.5rem] w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in duration-200">
             <div className="p-6 bg-slate-900 text-white flex justify-between items-center">
               <h4 className="font-bold flex items-center gap-2">
-                <Shield size={20} className="text-indigo-400" /> Quản lý tài khoản: {editingOwner.name}
+                <Shield size={20} className="text-indigo-400" /> Sửa: {editingOwner.username}
               </h4>
-              <button onClick={() => setEditingOwner(null)} className="text-white/60 hover:text-white transition-colors">
-                <X size={20} />
-              </button>
+              <button onClick={() => setEditingOwner(null)} className="text-white/60 hover:text-white"><X size={20} /></button>
             </div>
             
             <form onSubmit={handleUpdateOwner} className="p-8 space-y-5">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Họ và Tên</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Username</label>
                   <div className="relative">
                     <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                     <input 
                       required
-                      value={editingOwner.name}
-                      onChange={(e) => setEditingOwner({...editingOwner, name: e.target.value})}
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                      value={editingOwner.username}
+                      onChange={(e) => setEditingOwner({...editingOwner, username: e.target.value})}
+                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none"
                     />
                   </div>
                 </div>
-
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Số điện thoại</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">SĐT</label>
                   <div className="relative">
                     <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                     <input 
                       required
                       value={editingOwner.phone}
                       onChange={(e) => setEditingOwner({...editingOwner, phone: e.target.value})}
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none"
                     />
                   </div>
                 </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Mã Doanh nghiệp</label>
-                  <div className="relative">
-                    <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                    <input 
-                      required
-                      value={editingOwner.businessCode}
-                      onChange={(e) => setEditingOwner({...editingOwner, businessCode: e.target.value})}
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ngày tham gia</label>
-                  <div className="relative">
-                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                    <input 
-                      type="date"
-                      required
-                      value={editingOwner.joined}
-                      onChange={(e) => setEditingOwner({...editingOwner, joined: e.target.value})}
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                    />
-                  </div>
-                </div>
-
                 <div className="col-span-2 space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Mật khẩu mới</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Mật khẩu mới (Để trống nếu không đổi)</label>
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                     <input 
                       type={showPassword ? "text" : "password"}
-                      required
                       value={editingOwner.password}
                       onChange={(e) => setEditingOwner({...editingOwner, password: e.target.value})}
-                      className="w-full pl-10 pr-12 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                      className="w-full pl-10 pr-12 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none"
                     />
-                    <button 
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600"
-                    >
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                 </div>
               </div>
 
-              <div className="pt-6 border-t border-slate-100 flex gap-3">
-                <button 
-                  type="button"
-                  onClick={() => setEditingOwner(null)}
-                  className="flex-1 px-4 py-3 border border-slate-200 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50 transition-colors"
-                >
-                  Hủy bỏ
-                </button>
-                <button 
-                  type="submit"
-                  className="flex-2 px-4 py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
-                >
-                  <Save size={18} /> Lưu toàn bộ thay đổi
+              <div className="pt-6 flex gap-3">
+                <button type="button" onClick={() => setEditingOwner(null)} className="flex-1 py-3 border border-slate-200 rounded-xl text-sm font-bold text-slate-500">Hủy</button>
+                <button type="submit" className="flex-2 py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2">
+                  <Save size={18} /> Lưu thay đổi
                 </button>
               </div>
             </form>
@@ -255,7 +254,17 @@ function OwnersManagement() {
       )}
     </div>
   );
-};
+}
+
+// Helper Components
+const InfoItem = ({ icon, text }: { icon: React.ReactNode, text: string }) => (
+  <div className="flex items-center gap-2 text-sm text-slate-500 font-medium overflow-hidden">
+    <span className="text-slate-300 shrink-0">{icon}</span>
+    <span className="truncate">{text}</span>
+  </div>
+);
+
+// ... (Keep SystemAnalytics, SystemConfigAndTemplates, and small helpers as they were)
 
 function SystemAnalytics() {
   const data = [

@@ -7,6 +7,7 @@ from api.controllers.dashboard import dashboard_bp
 from api.controllers.auth_controller import auth_bp
 from api.controllers.orders import orders_bp
 from api.controllers.staff import employee_bp
+from api.controllers.admin import admin_bp
 #from routes import auth_bp
 #from routes import admin_bp
 
@@ -25,6 +26,7 @@ app.register_blueprint(dashboard_bp,)
 app.register_blueprint(auth_bp)
 app.register_blueprint(orders_bp)
 app.register_blueprint(employee_bp)
+app.register_blueprint(admin_bp)
 
 @app.route("/", methods=["GET"])
 def health_check():
