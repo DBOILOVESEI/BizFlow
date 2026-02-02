@@ -8,7 +8,7 @@ from infrastructure.models.user_model import UserModel
 from datetime import datetime 
 from infrastructure.models.order_model import OrderModel
 from infrastructure.models.customer_debt_model import CustomerDebtModel
-
+from infrastructure.models.customer_model import CustomerModel
 
 def get_all_products(inventory_id: int):
     """Lấy danh sách sản phẩm theo đúng kho hàng của chủ sở hữu"""
@@ -56,34 +56,41 @@ def add_item_to_order_logic(product_id: int, quantity: int):
         return None, str(e)
 
 def create_new_product(name, price, unit, stock, category, inventory_id):
-    """
-    Tạo một bản ghi ProductModel mới và thêm vào session. 
-    Lưu ý: Không commit session ở đây để hỗ trợ Batch Insert.
-    """
     try:
-        new_prod = ProductModel(
-            product_name=name or "Unnamed product", # Dùng giá trị mặc định nếu None
+        # Tạo mã SKU và Barcode
+        code_suffix = uuid.uuid4().hex[:8].upper()
+        generated_code = f"PRD-{code_suffix}"
+        generated_barcode = f"BAR-{code_suffix}"
+
+        # --- SỬA Ở ĐÂY ---
+        new_product = ProductModel(
             inventory_id=inventory_id,
-            category_name=category or "Chung",
-            product_code=f"PROD-{uuid.uuid4().hex[:6].upper()}",
-            barcode=f"BAR-{uuid.uuid4().hex[:6].upper()}",
+            product_name=name,
+            category_name=category,
             base_unit=unit,
             base_price=price,
-            cost_price=price,
+            
+            # THÊM DÒNG NÀY ĐỂ HẾT LỖI NOT NULL
+            stock_quantity=stock,  # <--- Quan trọng!
+            
+            product_code=generated_code,
+            barcode=generated_barcode,
+            cost_price=price, # Tạm thời gán giá vốn = giá bán để không bị null
+            low_stock_threshold=5,
             is_active=True,
-            low_stock_threshold=10, 
+            description=f"Sản phẩm {name}",
+            image_url="", 
             created_at=datetime.utcnow(),
-            description="" 
+            updated_at=datetime.utcnow()
         )
-        session.add(new_prod)
-        session.flush() # Tạo ID sản phẩm trước khi commit
+        
+        session.add(new_product)
+        session.flush() 
+        return new_product
 
-        # KHÔNG GỌI session.commit() Ở ĐÂY
-        return new_prod
     except Exception as e:
-        # KHÔNG GỌI session.rollback() Ở ĐÂY
-        print(f"Lỗi khi thêm sản phẩm {name}: {e}")
-        # Trả về None để thông báo lỗi cho hàm gọi
+        print(f"Error creating product: {e}")
+        session.rollback() # Rollback để tránh lỗi PendingRollbackError cho request sau
         return None
 
 def update_product_by_id(product_id: int, data: dict, inventory_id: int):
@@ -210,19 +217,65 @@ def add_product_to_owner_inventory():
         session.rollback()
         return jsonify({"msg": f"Lỗi hệ thống: {str(e)}"}), 500
 def save_order_only(data, user_id, db_session):
+    """
+    Lưu đơn hàng + Tự động tạo khách hàng (Fix lỗi thiếu customer_code)
+    """
     try:
+
+        customer_phone = data.get('customerPhone')
+        customer_name = data.get('customerName')
+        payment_mode = data.get('paymentMode')
+        total_amount = float(data.get('totalAmount', 0))
+        debt_amount = float(data.get('debtAmount', 0))
+
+        # Validate cơ bản
+        if payment_mode == 'DEBT' and (not customer_phone or not customer_name):
+            return None, "Lỗi: Đơn ghi nợ bắt buộc phải có Tên và SĐT khách hàng!"
+
+        current_customer = None
+        
+        if customer_phone:
+            current_customer = db_session.query(CustomerModel).filter_by(phone=customer_phone).first()
+
+            if not current_customer:
+
+                generated_code = f"CUS-{uuid.uuid4().hex[:8].upper()}"
+                
+                print(f"--- Tạo khách hàng mới: {customer_name} (Code: {generated_code}) ---")
+                
+                current_customer = CustomerModel(
+                    customer_code=generated_code,       # <--- Bắt buộc có
+                    customer_name=customer_name,
+                    phone=customer_phone,
+                    address=data.get('customerAddress', ''),
+                    customer_type='RETAIL',             # <--- Bắt buộc có (Enum: RETAIL, WHOLESALE, VIP)
+                    total_debt=0,
+                    created_by=user_id,
+                    created_at=datetime.utcnow(),
+                    updated_at=datetime.utcnow()
+                )
+                db_session.add(current_customer)
+                db_session.flush() 
+
+        # Cập nhật số liệu khách hàng
+        customer_id_for_order = None
+        if current_customer:
+            customer_id_for_order = current_customer.customer_id
+            if payment_mode == 'DEBT':
+                current_customer.total_debt = (current_customer.total_debt or 0) + debt_amount
+
         new_order = OrderModel(
             order_number=f"HD-{datetime.now().strftime('%y%m%d%H%M%S')}",
             order_type='AT_COUNTER',
             order_status='COMPLETED',
-            customer_id=data.get('customerId'),
-            customer_name=data.get('customerName') or "Khách lẻ",
+            customer_id=customer_id_for_order,
+            customer_name=customer_name or "Khách lẻ",
             order_date=datetime.utcnow(),
-            total_amount=data.get('totalAmount'),
-            final_amount=data.get('totalAmount'),
-            payment_method=data.get('paymentMode'),
+            total_amount=total_amount,
+            final_amount=total_amount,
+            payment_method=payment_mode,
             paid_amount=data.get('paidAmount', 0),
-            debt_amount=data.get('debtAmount', 0),
+            debt_amount=debt_amount,
             created_by=user_id,
             confirmed_by=user_id,
             confirmed_at=datetime.utcnow(),
@@ -230,27 +283,31 @@ def save_order_only(data, user_id, db_session):
         )
         
         db_session.add(new_order)
-        db_session.flush() 
+        db_session.flush()
 
-        # 2. Nếu là Ghi nợ, lưu vào bảng customer_debt
-        if data.get('paymentMode') == 'DEBT' and data.get('customerId'):
-            # Tự động lấy ID của đơn hàng vừa tạo (thử .id hoặc .order_id)
-            oid = getattr(new_order, 'id', getattr(new_order, 'order_id', None))
-            
-            new_debt = CustomerDebtModel(
-                customer_id=data.get('customerId'),
-                order_id=oid,
-                debt_amount=data.get('debtAmount'),
+        # ---------------------------------------------------------
+        # BƯỚC 3: LƯU LỊCH SỬ NỢ
+        # ---------------------------------------------------------
+        if payment_mode == 'DEBT' and customer_id_for_order:
+            new_debt_record = CustomerDebtModel(
+                customer_id=customer_id_for_order,
+                order_id=new_order.order_id,
+                debt_amount=debt_amount,
                 paid_amount=0,
-                remaining_amount=data.get('debtAmount'),
+                remaining_amount=debt_amount,
                 debt_date=datetime.utcnow(),
                 status='UNPAID',
-                crated_at=datetime.utcnow()
+                created_at=datetime.utcnow()
             )
-            db_session.add(new_debt)
+            db_session.add(new_debt_record)
 
         db_session.commit()
         return new_order, "Thành công"
+
     except Exception as e:
         db_session.rollback()
+        print(f"Lỗi save_order: {e}")
+        # In chi tiết lỗi để debug dễ hơn
+        import traceback
+        traceback.print_exc()
         return None, str(e)

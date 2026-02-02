@@ -25,18 +25,21 @@ def inventory():
     """
     API lấy toàn bộ sản phẩm của kho để hiển thị lên bảng UI.
     """
-    owner_id = get_jwt_identity()
-    inventory = inventory_repo.get_inventory_from_owner_id(owner_id)
+    current_user_id = get_jwt_identity()
+    current_user = user_repo.get_by_id(current_user_id)
+    if not current_user:
+        return jsonify({"msg": "Người dùng không tồn tại"}), 404
+        
+    target_owner_id = current_user.owner_id if current_user.owner_id else current_user.user_id
+    inventory = inventory_repo.get_inventory_from_owner_id(target_owner_id)
     if not inventory:
-        return jsonify({"msg": f"Không thể tìm thấy inventory thuộc về owner id {owner_id}"}), 401
+        return jsonify({"msg": f"Không tìm thấy kho hàng cho chủ sở hữu này"}), 404
 
     inventory_id = inventory.inventory_id
 
     try:
-        # Lấy dữ liệu thật từ DB thông qua hàm get_all_products trong repo
         products = orders_repo.get_all_products(inventory_id)
         
-        # Chuyển đổi dữ liệu từ Model sang JSON cho Frontend
         products_data = []
         for p in products:
             products_data.append({
@@ -61,13 +64,14 @@ def inventory():
 @orders_bp.route('/checkout', methods=['POST'])
 @role_required("OWNER", "EMPLOYEE")
 def checkout_api():
+    current_user_id = get_jwt_identity()
+    current_user = user_repo.get_by_id(current_user_id)
+    if not current_user:
+        return jsonify({"msg": "Người dùng không tồn tại"}), 404
     try:
         data = request.get_json()
-        user_info = getattr(g, 'user', None)
-        u_id = user_info.get('id') if user_info else 1 
-
         # Truyền data, user_id và session đã import
-        order, msg = orders_repo.save_order_only(data, u_id, session)
+        order, msg = orders_repo.save_order_only(data, current_user_id, session)
 
         if order:
             return jsonify({"msg": "Thành công"}), 201

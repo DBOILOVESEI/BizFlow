@@ -12,6 +12,7 @@ export const ENDPOINTS = {
     INVENTORY: "/inventory",
     ORDER: "/order",
     POS: "/pos",
-    ADMIN: "/admin"
+    ADMIN: "/admin",
+    ADMIN_OWNERS: "/admin/owners"
     // ...
 };

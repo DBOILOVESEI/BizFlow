@@ -1,5 +1,6 @@
 from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Text, DECIMAL, Boolean, Enum
 from infrastructure.databases.base import Base
+from datetime import datetime # Thêm import này để dùng default nếu cần
 
 class CustomerDebtModel(Base):
     __tablename__ = 'customer_debt'
@@ -14,5 +15,7 @@ class CustomerDebtModel(Base):
     debt_date = Column(DateTime, nullable=True)
     due_date = Column(DateTime, nullable=True)
     status = Column(Enum('UNPAID', 'PARTIAL', 'PAID', 'OVERDUE', name="CustomerDebtStatusEnum"), nullable=False)
-    crated_at = Column(DateTime)
-    updated_at =Column(DateTime)
+    
+    created_at = Column(DateTime, default=datetime.utcnow) 
+    
+    updated_at = Column(DateTime, default=datetime.utcnow)

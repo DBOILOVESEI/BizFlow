@@ -1,21 +1,14 @@
 from flask import Flask, jsonify
 from modules.extensions import bcrypt, jwt, cors
 from infrastructure import databases
-import os
-from dotenv import load_dotenv
-from flask_cors import CORS
-
-load_dotenv()
+from api.controllers.dashboard import dashboard_bp
 
 # BLUEPRINTS
 from api.controllers.auth_controller import auth_bp
 from api.controllers.orders import orders_bp
 from api.controllers.staff import employee_bp
-<<<<<<< HEAD
-from api.controllers.overview import overview_bp
-=======
-from api.controllers.analytics_controller import analytics_bp
->>>>>>> 1094c895023554d484e96069e6b1c692dd366db0
+from api.controllers.admin import admin_bp
+from api.controllers.customer import customer_bp
 #from routes import auth_bp
 #from routes import admin_bp
 
@@ -24,26 +17,18 @@ role_repo.create_roles()
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "super-secret-key"
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
-CORS(app, resources={r"/*": {
-    "origins": "http://localhost:3000",
-    "methods": ["GET", "POST", "OPTIONS"],
-    "allow_headers": ["Content-Type", "Authorization"]
-}})
 
 bcrypt.init_app(app)
 jwt.init_app(app)
 cors.init_app(app)
 
 # Register blueprints
+app.register_blueprint(customer_bp,)
+app.register_blueprint(dashboard_bp,)
 app.register_blueprint(auth_bp)
 app.register_blueprint(orders_bp)
 app.register_blueprint(employee_bp)
-<<<<<<< HEAD
-app.register_blueprint(overview_bp)
-=======
-app.register_blueprint(analytics_bp)
->>>>>>> 1094c895023554d484e96069e6b1c692dd366db0
+app.register_blueprint(admin_bp)
 
 @app.route("/", methods=["GET"])
 def health_check():

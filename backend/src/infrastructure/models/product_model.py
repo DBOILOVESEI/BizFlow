@@ -20,4 +20,5 @@ class ProductModel(Base):
     low_stock_threshold = Column(Integer, nullable=False)
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
+    stock_quantity = Column(Integer, nullable=False, default=0)
     
