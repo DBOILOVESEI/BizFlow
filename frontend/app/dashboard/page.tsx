@@ -82,8 +82,7 @@ export default function Dashboard() {
         setLoading(false);
       }
     };
-
-    fetchDashboardData();
+fetchDashboardData();
   }, [user]); // Chạy lại khi user thay đổi (login)
 
   // --- RENDER LOADING ---
@@ -154,7 +153,7 @@ export default function Dashboard() {
                 <Tooltip formatter={(value) => `${Number(value).toLocaleString()}đ`} />
                 <Area type="monotone" dataKey="value" stroke="#6366f1" fillOpacity={0.2} fill="#6366f1" />
               </AreaChart>
-            </ResponsiveContainer>
+</ResponsiveContainer>
             {(!stats.chart_data || stats.chart_data.length === 0) && (
                 <div className="text-center text-gray-400 mt-[-100px]">Chưa có dữ liệu tuần này</div>
             )}
