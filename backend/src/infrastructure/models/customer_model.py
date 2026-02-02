@@ -12,11 +12,7 @@ class CustomerModel(Base):
     phone = Column(String(20), nullable=True)
     email = Column(String(100), nullable=True)
     address = Column(Text, nullable=True)  
-<<<<<<< HEAD
-    customer_type = Column(Enum('RETAIL', 'WHOLESALE', 'VIP'), nullable=False)
-=======
     customer_type = Column(Enum('RETAIL', 'WHOLESALE', 'VIP', name="CustomerTypeEnum"), nullable=False)
->>>>>>> f39ae2140416c6d2bf1de88a8fbba34eb5b56f16
     total_debt = Column(DECIMAL(15,2), nullable=False)
     credit_limit = Column(DECIMAL(15,2), nullable=True)
     notes = Column(Text, nullable=True)
