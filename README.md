@@ -11,9 +11,9 @@ official PostgreSQL website. Run the installer, accept default components (Serve
 2. Change URL in engine.py (/backend/src/infrastructure/databases/engine.py)</br>
 DATABASE_URL = "postgresql+psycopg2://postgres:123456@localhost:5432/bizflow_dev"</br>
 Change postgres:123456 to yourPostgresUsername:Password</br>
-Don't use localhost in deployment.
+(Don't use localhost in deployment.)
 
-3. Create virtual environment</br>
+3. Locate to backend folder and create virtual environment</br>
 ## Windows:
 py -m venv .venv
 
@@ -29,6 +29,12 @@ source .venv/bin/activate</br>
 
 Or if you're using fish:</br>
 source .venv/bin/activate.fish
+
+5. Install libraries:
+pip install -r requirements.txt
+
+6. Run the app
+python3 src/app.py
 
 ## FRONTEND
 1. Make sure you have NodeJS installed
