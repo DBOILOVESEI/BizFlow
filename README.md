@@ -31,7 +31,7 @@ python3 -m venv .venv
 ```bash
 source .venv/bin/activate</br>
 ```
-Or if you're using fish:</br>
+Or if you're using fish:
 ```bash
 source .venv/bin/activate.fish
 ```
