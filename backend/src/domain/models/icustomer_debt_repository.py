@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from backend.src.domain.models.product import Product
 from .customer_debt import CustomerDebt
 from typing import List, Optional
 

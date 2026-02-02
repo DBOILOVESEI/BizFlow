@@ -1,11 +1,17 @@
 from flask import Flask, jsonify
 from modules.extensions import bcrypt, jwt, cors
 from infrastructure import databases
+import os
+from dotenv import load_dotenv
+from flask_cors import CORS
+
+load_dotenv()
 
 # BLUEPRINTS
 from api.controllers.auth_controller import auth_bp
 from api.controllers.orders import orders_bp
 from api.controllers.staff import employee_bp
+from api.controllers.overview import overview_bp
 #from routes import auth_bp
 #from routes import admin_bp
 
@@ -14,6 +20,12 @@ role_repo.create_roles()
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "super-secret-key"
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
+CORS(app, resources={r"/*": {
+    "origins": "http://localhost:3000",
+    "methods": ["GET", "POST", "OPTIONS"],
+    "allow_headers": ["Content-Type", "Authorization"]
+}})
 
 bcrypt.init_app(app)
 jwt.init_app(app)
@@ -23,6 +35,7 @@ cors.init_app(app)
 app.register_blueprint(auth_bp)
 app.register_blueprint(orders_bp)
 app.register_blueprint(employee_bp)
+app.register_blueprint(overview_bp)
 
 @app.route("/", methods=["GET"])
 def health_check():

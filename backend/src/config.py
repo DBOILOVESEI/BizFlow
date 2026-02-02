@@ -1,4 +1,4 @@
-DATABASE_URL = "postgresql+psycopg2://sa:Aa123456@localhost:1433/bflow"
+DATABASE_URL = "postgresql+psycopg2://postgres:123456@localhost:5433/bizflow_dev"
 
 #import os
 """

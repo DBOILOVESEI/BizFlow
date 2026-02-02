@@ -7,4 +7,7 @@ class InventoryModel(Base):
 
     inventory_id = Column(Integer, primary_key=True)
     owner_id = Column(Integer, ForeignKey('user.user_id'))
+    product_id = Column(Integer, ForeignKey('product.product_id'))
+    quantity = Column(Integer, nullable=False)
+    low_stock_threshold = Column(Integer, nullable=False)
     last_update = Column(DateTime)

@@ -1,5 +1,6 @@
-'use client'
+'use client' // PHẢI CÓ DÒNG NÀY Ở ĐẦU FILE
 
+import { fetchDashboardOverview } from '@/modules/api/dashboard.api';
 import React, { useEffect, useState } from 'react'
 import {
   TrendingUp,
@@ -12,27 +13,18 @@ import {
 } from 'lucide-react'
 import MainLayout from "../../components/MainLayout";
 import { useAuth } from "../../modules/useAuth";
-
-// Không dùng import types từ bên ngoài, định nghĩa lại cơ bản
-type Order = { id: string; totalAmount: number; [key: string]: any };
-type Product = { id: string; stockLevel: number; minStock: number; [key: string]: any };
-type Customer = { id: string; debt: number; [key: string]: any };
-
-// Giả lập MainLayout vì không có file MainLayout
-const MockMainLayout: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-  <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-    <h1 className="text-3xl font-bold text-slate-900 mb-6">{title}</h1>
-    {children}
-  </div>
-);
-
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
-// =================================================================
-// CHUYỂN ĐỔI THÀNH FUNCTION CƠ BẢN KHÔNG DÙNG INTERFACE HOẶC PROPS
-// =================================================================
+// Định nghĩa kiểu dữ liệu đồng nhất với Backend
+type OverviewData = {
+  total_revenue: number
+  total_customers: number
+  total_debt: number
+  low_stock_products: number
+  weekly_revenue: { date: string; revenue: number }[]
+}
 
-// Component con StatCard (không dùng interface)
+// Component con StatCard
 const StatCard = ({ title, value, trend, trendUp, icon }: { title: string; value: string; trend: string; trendUp: boolean; icon: React.ReactNode }) => (
   <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
     <div className="flex items-center justify-between mb-4">
@@ -47,79 +39,64 @@ const StatCard = ({ title, value, trend, trendUp, icon }: { title: string; value
   </div>
 );
 
-
 export default function Dashboard() {
   const { user, logout } = useAuth();
   
-  const [orders, setOrders] = useState<Order[]>([])
-  const [products, setProducts] = useState<Product[]>([])
-  const [customers, setCustomers] = useState<Customer[]>([])
+  // Hooks PHẢI nằm trong lòng function component
+  const [overview, setOverview] = useState<OverviewData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // Hàm mô phỏng tải dữ liệu (thay thế loadDashboardData và mock data)
   useEffect(() => {
-    // Giả lập độ trễ
-    setTimeout(() => {
-      const mockOrders: Order[] = [
-        { id: '1', totalAmount: 500000 },
-        { id: '2', totalAmount: 300000 },
-        { id: '3', totalAmount: 750000 },
-        { id: '4', totalAmount: 120000 },
-      ]
+    const loadData = async () => {
+      try {
+        setLoading(true)
+        const data = await fetchDashboardOverview()
+        setOverview(data)
+      } catch (err) {
+        console.error("Fetch dashboard failed", err)
+        setError("Không thể tải dữ liệu từ máy chủ.")
+      } finally {
+        setLoading(false)
+      }
+    }
 
-      const mockProducts: Product[] = [
-        { id: '1', stockLevel: 3, minStock: 5 }, // Low stock
-        { id: '2', stockLevel: 10, minStock: 3 },
-        { id: '3', stockLevel: 1, minStock: 2 }, // Low stock
-        { id: '4', stockLevel: 50, minStock: 10 },
-      ]
-
-      const mockCustomers: Customer[] = [
-        { id: 'c1', debt: 200000 },
-        { id: 'c2', debt: 0 },
-        { id: 'c3', debt: 450000 },
-        { id: 'c4', debt: 0 },
-        { id: 'c5', debt: 0 },
-      ]
-
-      setOrders(mockOrders)
-      setProducts(mockProducts)
-      setCustomers(mockCustomers)
-      setLoading(false)
-    }, 1000)
+    loadData()
   }, [])
 
-  // Các hàm API fetchOrders, fetchProducts, fetchCustomers và loadDashboardData gốc đã bị loại bỏ/comment
-  // và thay thế bằng mock data trong useEffect để đảm bảo tính độc lập của component.
-
+  // Xử lý trạng thái Loading
   if (loading) {
     return (
-      <MockMainLayout title="Tổng quan">
-        <div className="flex items-center justify-center h-48 bg-white rounded-xl border shadow-sm">
-          <Loader2 className="animate-spin text-indigo-500 mr-2" size={24} />
-          <span className="text-slate-600">Đang tải dữ liệu...</span>
+      <MainLayout title="Tổng quan" user={user} logout={logout}>
+        <div className="flex flex-col justify-center items-center h-96 gap-4">
+          <Loader2 className="animate-spin text-indigo-500" size={40} />
+          <p className="text-slate-500 animate-pulse">Đang tải dữ liệu...</p>
         </div>
-      </MockMainLayout>
+      </MainLayout>
     )
   }
 
-  const totalRevenue = orders.reduce((sum, o) => sum + o.totalAmount, 0)
-  const totalDebt = customers.reduce((sum, c) => sum + c.debt, 0)
-  const lowStockCount = products.filter(p => p.stockLevel <= p.minStock).length
+  // Xử lý khi có dữ liệu
+  const totalRevenue = overview?.total_revenue ?? 0
+  const totalDebt = overview?.total_debt ?? 0
+  const totalCustomers = overview?.total_customers ?? 0
+  const lowStockCount = overview?.low_stock_products ?? 0
 
-  const chartData = [
-    { name: 'T2', revenue: 400000 },
-    { name: 'T3', revenue: 300000 },
-    { name: 'T4', revenue: 500000 },
-    { name: 'T5', revenue: 278000 },
-    { name: 'T6', revenue: 189000 },
-    { name: 'T7', revenue: 239000 },
-    { name: 'CN', revenue: 349000 },
-  ]
+  // Định dạng lại ngày tháng cho biểu đồ dễ nhìn hơn
+  const chartData = overview?.weekly_revenue.map(item => ({
+    name: new Date(item.date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }),
+    revenue: item.revenue
+  })) ?? []
 
   return (
-    <MainLayout title="Tồng quan" user={user} logout={logout}>
+    <MainLayout title="Tổng quan" user={user} logout={logout}>
       <div className="space-y-6">
+        {error && (
+          <div className="bg-rose-50 border border-rose-200 text-rose-600 px-4 py-3 rounded-lg flex items-center gap-2">
+            <AlertCircle size={18} /> {error}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title="Tổng Doanh thu"
@@ -128,16 +105,13 @@ export default function Dashboard() {
             trendUp
             icon={<TrendingUp className="text-emerald-500" />}
           />
-
-          {/* ... (Các StatCard khác) ... */}
-           <StatCard
+          <StatCard
             title="Tổng Khách hàng"
-            value={customers.length.toString()}
+            value={totalCustomers.toString()}
             trend="+3"
             trendUp
             icon={<Users className="text-blue-500" />}
           />
-
           <StatCard
             title="Tổng Nợ phải thu"
             value={`${totalDebt.toLocaleString()}đ`}
@@ -145,7 +119,6 @@ export default function Dashboard() {
             trendUp={false}
             icon={<AlertCircle className="text-amber-500" />}
           />
-
           <StatCard
             title="Sản phẩm sắp hết"
             value={lowStockCount.toString()}
@@ -155,16 +128,24 @@ export default function Dashboard() {
           />
         </div>
 
-        <div className="bg-white p-6 rounded-xl border shadow-sm">
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
           <h3 className="text-slate-800 text-lg font-semibold mb-6">Biểu đồ Doanh thu (Tuần này)</h3>
-          <div className="h-96">
+          <div className="h-96 w-full relative min-h-[384px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Area type="monotone" dataKey="revenue" stroke="#6366f1" fillOpacity={0.2} />
+                <defs>
+                  <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
+                <Tooltip 
+                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                />
+                <Area type="monotone" dataKey="revenue" stroke="#6366f1" strokeWidth={2} fillOpacity={1} fill="url(#colorRev)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
