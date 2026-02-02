@@ -29,7 +29,7 @@ python3 -m venv .venv
 ```
 ## Unix/MacOS:
 ```bash
-source .venv/bin/activate</br>
+source .venv/bin/activate
 ```
 Or if you're using fish:
 ```bash
