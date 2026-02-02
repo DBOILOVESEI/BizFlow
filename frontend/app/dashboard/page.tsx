@@ -65,7 +65,7 @@ export default function Dashboard() {
           headers: {
             'Content-Type': 'application/json',
             // Nếu backend cần token xác thực, gửi kèm ở đây:
-            // 'Authorization': `Bearer ${user.token}` 
+            'Authorization': `Bearer ${user.token}` 
           }
         });
 

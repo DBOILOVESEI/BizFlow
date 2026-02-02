@@ -1,30 +1,21 @@
-import jwt
-from flask import Blueprint, request, jsonify, current_app
-from modules.extensions import bcrypt, cors
-from modules.decorators import role_required
+from flask import Blueprint, jsonify
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from infrastructure.databases.engine import SessionLocal
 from repositories import dashboard_repo
 
-from datetime import datetime, timedelta
-from infrastructure.databases.engine import session
+# --- CẤU HÌNH BLUEPRINT ---
+# Lưu ý: Không để url_prefix='/api' để đường dẫn là /dashboard như bạn muốn
+dashboard_bp = Blueprint('dashboard', __name__)
 
-from repositories import user_repo
-
-auth_bp = Blueprint('auth', __name__, url_prefix='/')
-
-@auth_bp.route('/dashboard', methods=['POST'])
-@role_required("OWNER")
-def dashboard():
-    print("hello dashbard")
-dashboard_bp = Blueprint('dashboard_bp', __name__)
-
-#
 @dashboard_bp.route('/dashboard', methods=['GET'])
+@jwt_required()
 def get_stats():
+    current_user_id = get_jwt_identity()
+    session = SessionLocal()
+    
     try:
-        # Gọi hàm lấy dữ liệu từ Repo
-        # Lưu ý: Hãy đảm bảo tên hàm này khớp với file dashboard_repo.py của bạn
-        # (Lúc nãy mình hướng dẫn là get_dashboard_statistics, code bạn gửi là get_dashboard_overview)
-        data = dashboard_repo.get_dashboard_statistics(session)
+        # Gọi xuống Repo (đảm bảo hàm bên repo tên là get_dashboard_statistics)
+        data = dashboard_repo.get_dashboard_statistics(session, current_user_id)
         
         return jsonify({
             "status": "success",
@@ -32,8 +23,10 @@ def get_stats():
         }), 200
         
     except Exception as e:
-        print(f"Lỗi Dashboard Controller: {e}")
+        print(f"❌ Lỗi Dashboard Controller: {e}")
         return jsonify({
             "status": "error",
             "message": "Không thể tải dữ liệu thống kê"
         }), 500
+    finally:
+        session.close()

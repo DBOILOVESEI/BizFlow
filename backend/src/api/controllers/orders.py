@@ -64,13 +64,14 @@ def inventory():
 @orders_bp.route('/checkout', methods=['POST'])
 @role_required("OWNER", "EMPLOYEE")
 def checkout_api():
+    current_user_id = get_jwt_identity()
+    current_user = user_repo.get_by_id(current_user_id)
+    if not current_user:
+        return jsonify({"msg": "Người dùng không tồn tại"}), 404
     try:
         data = request.get_json()
-        user_info = getattr(g, 'user', None)
-        u_id = user_info.get('id') if user_info else 1 
-
         # Truyền data, user_id và session đã import
-        order, msg = orders_repo.save_order_only(data, u_id, session)
+        order, msg = orders_repo.save_order_only(data, current_user_id, session)
 
         if order:
             return jsonify({"msg": "Thành công"}), 201

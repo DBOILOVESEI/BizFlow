@@ -221,9 +221,7 @@ def save_order_only(data, user_id, db_session):
     Lưu đơn hàng + Tự động tạo khách hàng (Fix lỗi thiếu customer_code)
     """
     try:
-        # ---------------------------------------------------------
-        # BƯỚC 1: XỬ LÝ KHÁCH HÀNG
-        # ---------------------------------------------------------
+
         customer_phone = data.get('customerPhone')
         customer_name = data.get('customerName')
         payment_mode = data.get('paymentMode')
@@ -240,8 +238,7 @@ def save_order_only(data, user_id, db_session):
             current_customer = db_session.query(CustomerModel).filter_by(phone=customer_phone).first()
 
             if not current_customer:
-                # --- FIX LỖI Ở ĐÂY ---
-                # Tạo mã khách hàng ngẫu nhiên (VD: CUS-A1B2C3D4)
+
                 generated_code = f"CUS-{uuid.uuid4().hex[:8].upper()}"
                 
                 print(f"--- Tạo khách hàng mới: {customer_name} (Code: {generated_code}) ---")
@@ -253,6 +250,7 @@ def save_order_only(data, user_id, db_session):
                     address=data.get('customerAddress', ''),
                     customer_type='RETAIL',             # <--- Bắt buộc có (Enum: RETAIL, WHOLESALE, VIP)
                     total_debt=0,
+                    created_by=user_id,
                     created_at=datetime.utcnow(),
                     updated_at=datetime.utcnow()
                 )
@@ -266,9 +264,6 @@ def save_order_only(data, user_id, db_session):
             if payment_mode == 'DEBT':
                 current_customer.total_debt = (current_customer.total_debt or 0) + debt_amount
 
-        # ---------------------------------------------------------
-        # BƯỚC 2: TẠO ĐƠN HÀNG
-        # ---------------------------------------------------------
         new_order = OrderModel(
             order_number=f"HD-{datetime.now().strftime('%y%m%d%H%M%S')}",
             order_type='AT_COUNTER',

@@ -19,3 +19,4 @@ class CustomerModel(Base):
     is_active = Column(Boolean)
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
+    created_by = Column(Integer, nullable=True)    

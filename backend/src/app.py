@@ -8,6 +8,7 @@ from api.controllers.auth_controller import auth_bp
 from api.controllers.orders import orders_bp
 from api.controllers.staff import employee_bp
 from api.controllers.admin import admin_bp
+from api.controllers.customer import customer_bp
 #from routes import auth_bp
 #from routes import admin_bp
 
@@ -22,6 +23,7 @@ jwt.init_app(app)
 cors.init_app(app)
 
 # Register blueprints
+app.register_blueprint(customer_bp,)
 app.register_blueprint(dashboard_bp,)
 app.register_blueprint(auth_bp)
 app.register_blueprint(orders_bp)
