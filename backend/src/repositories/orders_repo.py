@@ -56,34 +56,41 @@ def add_item_to_order_logic(product_id: int, quantity: int):
         return None, str(e)
 
 def create_new_product(name, price, unit, stock, category, inventory_id):
-    """
-    Tạo một bản ghi ProductModel mới và thêm vào session. 
-    Lưu ý: Không commit session ở đây để hỗ trợ Batch Insert.
-    """
     try:
-        new_prod = ProductModel(
-            product_name=name or "Unnamed product", # Dùng giá trị mặc định nếu None
+        # Tạo mã SKU và Barcode
+        code_suffix = uuid.uuid4().hex[:8].upper()
+        generated_code = f"PRD-{code_suffix}"
+        generated_barcode = f"BAR-{code_suffix}"
+
+        # --- SỬA Ở ĐÂY ---
+        new_product = ProductModel(
             inventory_id=inventory_id,
-            category_name=category or "Chung",
-            product_code=f"PROD-{uuid.uuid4().hex[:6].upper()}",
-            barcode=f"BAR-{uuid.uuid4().hex[:6].upper()}",
+            product_name=name,
+            category_name=category,
             base_unit=unit,
             base_price=price,
-            cost_price=price,
+            
+            # THÊM DÒNG NÀY ĐỂ HẾT LỖI NOT NULL
+            stock_quantity=stock,  # <--- Quan trọng!
+            
+            product_code=generated_code,
+            barcode=generated_barcode,
+            cost_price=price, # Tạm thời gán giá vốn = giá bán để không bị null
+            low_stock_threshold=5,
             is_active=True,
-            low_stock_threshold=10, 
+            description=f"Sản phẩm {name}",
+            image_url="", 
             created_at=datetime.utcnow(),
-            description="" 
+            updated_at=datetime.utcnow()
         )
-        session.add(new_prod)
-        session.flush() # Tạo ID sản phẩm trước khi commit
+        
+        session.add(new_product)
+        session.flush() 
+        return new_product
 
-        # KHÔNG GỌI session.commit() Ở ĐÂY
-        return new_prod
     except Exception as e:
-        # KHÔNG GỌI session.rollback() Ở ĐÂY
-        print(f"Lỗi khi thêm sản phẩm {name}: {e}")
-        # Trả về None để thông báo lỗi cho hàm gọi
+        print(f"Error creating product: {e}")
+        session.rollback() # Rollback để tránh lỗi PendingRollbackError cho request sau
         return None
 
 def update_product_by_id(product_id: int, data: dict, inventory_id: int):
