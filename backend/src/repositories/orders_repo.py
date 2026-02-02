@@ -8,7 +8,7 @@ from infrastructure.models.user_model import UserModel
 from datetime import datetime 
 from infrastructure.models.order_model import OrderModel
 from infrastructure.models.customer_debt_model import CustomerDebtModel
-
+from infrastructure.models.customer_model import CustomerModel
 
 def get_all_products(inventory_id: int):
     """Lấy danh sách sản phẩm theo đúng kho hàng của chủ sở hữu"""
@@ -217,19 +217,70 @@ def add_product_to_owner_inventory():
         session.rollback()
         return jsonify({"msg": f"Lỗi hệ thống: {str(e)}"}), 500
 def save_order_only(data, user_id, db_session):
+    """
+    Lưu đơn hàng + Tự động tạo khách hàng (Fix lỗi thiếu customer_code)
+    """
     try:
+        # ---------------------------------------------------------
+        # BƯỚC 1: XỬ LÝ KHÁCH HÀNG
+        # ---------------------------------------------------------
+        customer_phone = data.get('customerPhone')
+        customer_name = data.get('customerName')
+        payment_mode = data.get('paymentMode')
+        total_amount = float(data.get('totalAmount', 0))
+        debt_amount = float(data.get('debtAmount', 0))
+
+        # Validate cơ bản
+        if payment_mode == 'DEBT' and (not customer_phone or not customer_name):
+            return None, "Lỗi: Đơn ghi nợ bắt buộc phải có Tên và SĐT khách hàng!"
+
+        current_customer = None
+        
+        if customer_phone:
+            current_customer = db_session.query(CustomerModel).filter_by(phone=customer_phone).first()
+
+            if not current_customer:
+                # --- FIX LỖI Ở ĐÂY ---
+                # Tạo mã khách hàng ngẫu nhiên (VD: CUS-A1B2C3D4)
+                generated_code = f"CUS-{uuid.uuid4().hex[:8].upper()}"
+                
+                print(f"--- Tạo khách hàng mới: {customer_name} (Code: {generated_code}) ---")
+                
+                current_customer = CustomerModel(
+                    customer_code=generated_code,       # <--- Bắt buộc có
+                    customer_name=customer_name,
+                    phone=customer_phone,
+                    address=data.get('customerAddress', ''),
+                    customer_type='RETAIL',             # <--- Bắt buộc có (Enum: RETAIL, WHOLESALE, VIP)
+                    total_debt=0,
+                    created_at=datetime.utcnow(),
+                    updated_at=datetime.utcnow()
+                )
+                db_session.add(current_customer)
+                db_session.flush() 
+
+        # Cập nhật số liệu khách hàng
+        customer_id_for_order = None
+        if current_customer:
+            customer_id_for_order = current_customer.customer_id
+            if payment_mode == 'DEBT':
+                current_customer.total_debt = (current_customer.total_debt or 0) + debt_amount
+
+        # ---------------------------------------------------------
+        # BƯỚC 2: TẠO ĐƠN HÀNG
+        # ---------------------------------------------------------
         new_order = OrderModel(
             order_number=f"HD-{datetime.now().strftime('%y%m%d%H%M%S')}",
             order_type='AT_COUNTER',
             order_status='COMPLETED',
-            customer_id=data.get('customerId'),
-            customer_name=data.get('customerName') or "Khách lẻ",
+            customer_id=customer_id_for_order,
+            customer_name=customer_name or "Khách lẻ",
             order_date=datetime.utcnow(),
-            total_amount=data.get('totalAmount'),
-            final_amount=data.get('totalAmount'),
-            payment_method=data.get('paymentMode'),
+            total_amount=total_amount,
+            final_amount=total_amount,
+            payment_method=payment_mode,
             paid_amount=data.get('paidAmount', 0),
-            debt_amount=data.get('debtAmount', 0),
+            debt_amount=debt_amount,
             created_by=user_id,
             confirmed_by=user_id,
             confirmed_at=datetime.utcnow(),
@@ -237,27 +288,31 @@ def save_order_only(data, user_id, db_session):
         )
         
         db_session.add(new_order)
-        db_session.flush() 
+        db_session.flush()
 
-        # 2. Nếu là Ghi nợ, lưu vào bảng customer_debt
-        if data.get('paymentMode') == 'DEBT' and data.get('customerId'):
-            # Tự động lấy ID của đơn hàng vừa tạo (thử .id hoặc .order_id)
-            oid = getattr(new_order, 'id', getattr(new_order, 'order_id', None))
-            
-            new_debt = CustomerDebtModel(
-                customer_id=data.get('customerId'),
-                order_id=oid,
-                debt_amount=data.get('debtAmount'),
+        # ---------------------------------------------------------
+        # BƯỚC 3: LƯU LỊCH SỬ NỢ
+        # ---------------------------------------------------------
+        if payment_mode == 'DEBT' and customer_id_for_order:
+            new_debt_record = CustomerDebtModel(
+                customer_id=customer_id_for_order,
+                order_id=new_order.order_id,
+                debt_amount=debt_amount,
                 paid_amount=0,
-                remaining_amount=data.get('debtAmount'),
+                remaining_amount=debt_amount,
                 debt_date=datetime.utcnow(),
                 status='UNPAID',
-                crated_at=datetime.utcnow()
+                created_at=datetime.utcnow()
             )
-            db_session.add(new_debt)
+            db_session.add(new_debt_record)
 
         db_session.commit()
         return new_order, "Thành công"
+
     except Exception as e:
         db_session.rollback()
+        print(f"Lỗi save_order: {e}")
+        # In chi tiết lỗi để debug dễ hơn
+        import traceback
+        traceback.print_exc()
         return None, str(e)
