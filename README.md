@@ -4,14 +4,31 @@
 
 # HOW TO SET UP
 ## BACKEND
-1. Make sure you have Postgres SQL installed.
+1. Make sure you have Postgres SQL installed.</br>
 To install PostgreSQL, download the installer for your OS (Windows, macOS, or Linux) from the
 official PostgreSQL website. Run the installer, accept default components (Server, pgAdmin, Command Line Tools), set a secure password for the "postgres" user, and keep the default port 5432.
 
-2. Change URL in engine.py (/backend/src/infrastructure/databases/engine.py)
-DATABASE_URL = "postgresql+psycopg2://postgres:123456@localhost:5432/bizflow_dev"
-Change postgres:123456 to yourPostgresUsername:Password
+2. Change URL in engine.py (/backend/src/infrastructure/databases/engine.py)</br>
+DATABASE_URL = "postgresql+psycopg2://postgres:123456@localhost:5432/bizflow_dev"</br>
+Change postgres:123456 to yourPostgresUsername:Password</br>
 Don't use localhost in deployment.
+
+3. Create virtual environment</br>
+## Windows:
+py -m venv .venv
+
+## Unix/MacOS:
+python3 -m venv .venv
+
+4. Activate virtual environment
+## Windows:
+.venv\Scripts\activate.ps1
+
+## Unix/MacOS:
+source .venv/bin/activate</br>
+
+Or if you're using fish:</br>
+source .venv/bin/activate.fish
 
 ## FRONTEND
 1. Make sure you have NodeJS installed
