@@ -15,31 +15,45 @@ Change postgres:123456 to yourPostgresUsername:Password</br>
 
 3. Locate to backend folder and create virtual environment</br>
 ## Windows:
+```bash
 py -m venv .venv
-
+```
 ## Unix/MacOS:
+```bash
 python3 -m venv .venv
-
+```
 4. Activate virtual environment
 ## Windows:
+```bash
 .venv\Scripts\activate.ps1
-
+```
 ## Unix/MacOS:
+```bash
 source .venv/bin/activate</br>
-
+```
 Or if you're using fish:</br>
+```bash
 source .venv/bin/activate.fish
-
+```
 5. Install libraries:
+```bash
 pip install -r requirements.txt
-
+```
 6. Run the app
+```bash
 python3 src/app.py
-
+```
 ## FRONTEND
 1. Make sure you have NodeJS installed
-2. Locate to frontend folder and run "npm install"
+2. Locate to frontend folder and run
+```bash
+npm install
+```
 3. If there are vulterabilities, follow what the messages in the terminal says.
-4. Run "npm run dev" to test frontend.
+4. Run
+```bash
+npm run dev
+```
+to test frontend.
 
 the end
